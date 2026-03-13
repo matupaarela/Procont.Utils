@@ -39,6 +39,9 @@
             Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel3 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel7 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel8 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel4 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel9 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel10 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             this.sidebarControl1 = new Procont.Utils.Sidebar.SidebarControl();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
             this.SuspendLayout();
@@ -54,8 +57,13 @@
             sidebarGroupModel1.Children.Add(sidebarItemModel1);
             sidebarGroupModel1.Children.Add(sidebarItemModel2);
             sidebarGroupModel1.Children.Add(sidebarGroupModel2);
+            sidebarGroupModel1.Icon = FontAwesome.Sharp.IconChar.DollarSign;
+            sidebarGroupModel4.Children.Add(sidebarItemModel9);
+            sidebarGroupModel4.Children.Add(sidebarItemModel10);
             sidebarGroupModel3.Children.Add(sidebarItemModel7);
             sidebarGroupModel3.Children.Add(sidebarItemModel8);
+            sidebarGroupModel3.Children.Add(sidebarGroupModel4);
+            sidebarGroupModel3.Icon = FontAwesome.Sharp.IconChar.Question;
             this.sidebarControl1.Groups.Add(sidebarGroupModel1);
             this.sidebarControl1.Groups.Add(sidebarGroupModel3);
             this.sidebarControl1.Location = new System.Drawing.Point(0, 0);
