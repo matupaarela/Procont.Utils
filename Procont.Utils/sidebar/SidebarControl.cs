@@ -56,6 +56,26 @@ namespace Procont.Utils.Sidebar
         public event EventHandler<SidebarMenuItemControl> ItemSelected;
 
         // ══════════════════════════════════════════════════════════════
+        // PROPIEDADES DEL ÍTEM SELECCIONADO
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Ruta completa del ítem activo, separada por " · ".
+        /// Ej: "COMPROBANTES SEE · GUÍAS DE REMISIÓN · REMITENTE"
+        /// Devuelve string vacío si no hay ítem seleccionado.
+        /// </summary>
+        [Browsable(false)]
+        public string SelectedBreadcrumb => _activeItem?.BreadcrumbPath ?? string.Empty;
+
+        /// <summary>
+        /// Ícono del ítem activo. Si el ítem no tiene ícono propio,
+        /// devuelve el del ancestro más cercano con ícono definido.
+        /// Devuelve IconChar.None si no hay selección o ningún ancestro tiene ícono.
+        /// </summary>
+        [Browsable(false)]
+        public IconChar SelectedIcon => _activeItem?.ResolvedIcon ?? IconChar.None;
+
+        // ══════════════════════════════════════════════════════════════
         // PROPIEDADES DEL DISEÑADOR
         // ══════════════════════════════════════════════════════════════
 
@@ -239,9 +259,19 @@ namespace Procont.Utils.Sidebar
             RebuildMenuContainer();
         }
 
-        // Crea un SidebarMenuGroupControl desde un SidebarGroupModel (recursivo)
-        private SidebarMenuGroupControl BuildGroupControl(SidebarGroupModel model, int indentLevel)
+        // Crea un SidebarMenuGroupControl desde un SidebarGroupModel (recursivo).
+        // parentTitles e parentIcons acumulan la cadena de ancestros hacia abajo.
+        private SidebarMenuGroupControl BuildGroupControl(
+            SidebarGroupModel model,
+            int indentLevel,
+            List<string> parentTitles = null,
+            List<IconChar> parentIcons = null)
         {
+            if (model == null) return null;
+
+            parentTitles = parentTitles ?? new List<string>();
+            parentIcons = parentIcons ?? new List<IconChar>();
+
             var ctrl = new SidebarMenuGroupControl(indentLevel)
             {
                 GroupTitle = model.GroupTitle,
@@ -250,18 +280,29 @@ namespace Procont.Utils.Sidebar
                 Expanded = model.Expanded
             };
 
-            // Iterar Children en orden de visualización.
-            // Cada nodo puede ser SidebarItemModel o SidebarGroupModel — el orden se respeta.
+            // Cadena de este grupo hacia abajo
+            var myTitles = new List<string>(parentTitles) { model.GroupTitle };
+            var myIcons = new List<IconChar>(parentIcons) { model.Icon };
+
             foreach (var node in model.Children)
             {
+                if (node == null) continue;
+
                 if (node is SidebarItemModel itemModel)
                 {
                     var key = string.IsNullOrEmpty(itemModel.Key) ? itemModel.ItemText : itemModel.Key;
-                    ctrl.AddItem(itemModel.ItemText, key, itemModel.Icon);
+                    var item = ctrl.AddItem(itemModel.ItemText, key, itemModel.Icon);
+
+                    // Breadcrumb: "Grupo · SubGrupo · Ítem"
+                    var parts = new List<string>(myTitles) { itemModel.ItemText };
+                    item.BreadcrumbPath = string.Join(" · ", parts);
+
+                    // Ícono: el propio del ítem o el del ancestro más cercano
+                    item.ResolvedIcon = ResolveIcon(itemModel.Icon, myIcons);
                 }
                 else if (node is SidebarGroupModel subModel)
                 {
-                    var subCtrl = BuildGroupControl(subModel, indentLevel + 1);
+                    var subCtrl = BuildGroupControl(subModel, indentLevel + 1, myTitles, myIcons);
                     if (subCtrl != null)
                         ctrl.AddSubGroupControl(subCtrl);
                 }
@@ -270,6 +311,18 @@ namespace Procont.Utils.Sidebar
             ctrl.ItemSelected += OnGroupItemSelected;
             ctrl.LayoutChanged += (s, e) => UpdateContainerHeight();
             return ctrl;
+        }
+
+        /// <summary>
+        /// Devuelve itemIcon si no es None; si lo es, busca en ancestorIcons
+        /// de más cercano (último) a más lejano (primero).
+        /// </summary>
+        private static IconChar ResolveIcon(IconChar itemIcon, List<IconChar> ancestorIcons)
+        {
+            if (itemIcon != IconChar.None) return itemIcon;
+            for (int i = ancestorIcons.Count - 1; i >= 0; i--)
+                if (ancestorIcons[i] != IconChar.None) return ancestorIcons[i];
+            return IconChar.None;
         }
 
         private void OnGroupItemSelected(object sender, SidebarMenuItemControl item)

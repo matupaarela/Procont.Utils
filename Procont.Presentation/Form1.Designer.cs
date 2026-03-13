@@ -43,7 +43,10 @@
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel9 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel10 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             this.sidebarControl1 = new Procont.Utils.Sidebar.SidebarControl();
+            this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
+            this.label1 = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
             // sidebarControl1
@@ -70,22 +73,51 @@
             this.sidebarControl1.Name = "sidebarControl1";
             this.sidebarControl1.Size = new System.Drawing.Size(260, 450);
             this.sidebarControl1.TabIndex = 0;
+            this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
+            // 
+            // iconPictureBox1
+            // 
+            this.iconPictureBox1.BackColor = System.Drawing.SystemColors.Control;
+            this.iconPictureBox1.ForeColor = System.Drawing.SystemColors.ControlText;
+            this.iconPictureBox1.IconChar = FontAwesome.Sharp.IconChar.None;
+            this.iconPictureBox1.IconColor = System.Drawing.SystemColors.ControlText;
+            this.iconPictureBox1.IconFont = FontAwesome.Sharp.IconFont.Auto;
+            this.iconPictureBox1.Location = new System.Drawing.Point(374, 32);
+            this.iconPictureBox1.Name = "iconPictureBox1";
+            this.iconPictureBox1.Size = new System.Drawing.Size(32, 32);
+            this.iconPictureBox1.TabIndex = 1;
+            this.iconPictureBox1.TabStop = false;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(371, 76);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(35, 13);
+            this.label1.TabIndex = 2;
+            this.label1.Text = "label1";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.iconPictureBox1);
             this.Controls.Add(this.sidebarControl1);
             this.Name = "Form1";
             this.Text = "Form1";
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
 
         private Utils.Sidebar.SidebarControl sidebarControl1;
+        private FontAwesome.Sharp.IconPictureBox iconPictureBox1;
+        private System.Windows.Forms.Label label1;
     }
 }

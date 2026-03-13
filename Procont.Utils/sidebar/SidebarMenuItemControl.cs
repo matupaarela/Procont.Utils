@@ -66,6 +66,24 @@ namespace Procont.Utils.Sidebar
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
 
+        // ── Propiedades resueltas al construir el árbol ───────────────
+
+        /// <summary>
+        /// Ruta completa del ítem concatenando los títulos de sus padres.
+        /// Ej: "COMPROBANTES SEE · GUÍAS DE REMISIÓN · REMITENTE"
+        /// Se asigna automáticamente al construir el sidebar.
+        /// </summary>
+        [Browsable(false)]
+        public string BreadcrumbPath { get; internal set; } = "";
+
+        /// <summary>
+        /// Ícono resuelto: el propio del ítem o, si es None, el del ancestro más cercano
+        /// que tenga ícono definido.
+        /// Se asigna automáticamente al construir el sidebar.
+        /// </summary>
+        [Browsable(false)]
+        public IconChar ResolvedIcon { get; internal set; } = IconChar.None;
+
         // ── Evento ────────────────────────────────────────────────────
         public event EventHandler ItemSelected;
 
