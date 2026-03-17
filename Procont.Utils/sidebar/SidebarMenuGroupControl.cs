@@ -30,6 +30,13 @@ namespace Procont.Utils.Sidebar
         public event EventHandler<SidebarMenuItemControl> ItemSelected;
         internal event EventHandler LayoutChanged;
 
+        /// <summary>
+        /// Se dispara cuando un grupo de nivel 0 pasa de colapsado a expandido.
+        /// SidebarControl lo usa para implementar comportamiento accordion.
+        /// Solo lo lanzan grupos con _indentLevel == 0.
+        /// </summary>
+        internal event EventHandler GroupExpanded;
+
         // ── Propiedades ───────────────────────────────────────────────
 
         [Category("Sidebar")]
@@ -109,9 +116,6 @@ namespace Procont.Utils.Sidebar
         /// <summary>
         /// Agrega un ítem hoja a este grupo.
         /// </summary>
-        /// <param name="text">Texto visible.</param>
-        /// <param name="key">Clave de identificación. Si se omite, se usa el texto.</param>
-        /// <param name="icon">Ícono FontAwesome (opcional).</param>
         public SidebarMenuItemControl AddItem(string text, string key = "", IconChar icon = IconChar.None)
         {
             var resolvedKey = string.IsNullOrEmpty(key) ? text : key;
@@ -132,7 +136,6 @@ namespace Procont.Utils.Sidebar
             sub.LayoutChanged += (s, e) =>
             {
                 UpdateLayout();
-                // Burbujear hacia arriba para que SidebarControl recalcule el container
                 LayoutChanged?.Invoke(this, EventArgs.Empty);
             };
             _children.Add(sub);
@@ -142,10 +145,6 @@ namespace Procont.Utils.Sidebar
         /// <summary>
         /// Agrega un sub-grupo anidado.
         /// </summary>
-        /// <param name="title">Texto visible.</param>
-        /// <param name="key">Clave de identificación. Si se omite, se usa el título.</param>
-        /// <param name="icon">Ícono FontAwesome (opcional).</param>
-        /// <param name="expanded">Expandido por defecto.</param>
         public SidebarMenuGroupControl AddSubGroup(string title, string key = "", IconChar icon = IconChar.None, bool expanded = false)
         {
             var sub = new SidebarMenuGroupControl(_indentLevel + 1)
@@ -166,10 +165,6 @@ namespace Procont.Utils.Sidebar
         // VISIBILIDAD POR KEY
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Altura que tendría el grupo si estuviera visible en su estado actual.
-        /// Se usa para restaurar la altura al volver a mostrar.
-        /// </summary>
         internal int GetNaturalHeight()
         {
             return _header.Height
@@ -177,10 +172,6 @@ namespace Procont.Utils.Sidebar
                 + (_indentLevel == 0 ? 1 : 0);
         }
 
-        /// <summary>
-        /// Busca un nodo por Key entre los hijos directos e indirectos.
-        /// Devuelve true si lo encontró y aplicó la visibilidad.
-        /// </summary>
         internal bool SetChildVisible(string key, bool visible, Action recalculate)
         {
             foreach (var child in _children)
@@ -207,7 +198,6 @@ namespace Procont.Utils.Sidebar
                         return true;
                     }
 
-                    // Buscar más profundo
                     if (subGrp.SetChildVisible(key, visible, recalculate))
                         return true;
                 }
@@ -215,9 +205,6 @@ namespace Procont.Utils.Sidebar
             return false;
         }
 
-        /// <summary>
-        /// Aplica visibilidad a todos los hijos recursivamente.
-        /// </summary>
         internal void SetAllChildrenVisible(bool visible, Action recalculate)
         {
             foreach (var child in _children)
@@ -239,6 +226,77 @@ namespace Procont.Utils.Sidebar
             recalculate?.Invoke();
         }
 
+        // ══════════════════════════════════════════════════════════════
+        // SELECCIÓN PROGRAMÁTICA
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Busca un ítem por Key de forma recursiva.
+        /// Si lo encuentra: lo activa y expande todos los grupos ancestros en la ruta.
+        /// No dispara LayoutChanged — el llamador debe invocar UpdateContainerHeight().
+        /// </summary>
+        /// <returns>true si el ítem fue encontrado en este subárbol.</returns>
+        internal bool TrySelectItem(string key, out SidebarMenuItemControl found)
+        {
+            foreach (var child in _children)
+            {
+                if (child is SidebarMenuItemControl item && item.Key == key)
+                {
+                    item.IsActive = true;
+                    found = item;
+                    // Expandir este grupo si estaba colapsado
+                    if (!_expanded)
+                    {
+                        _expanded = true;
+                        UpdateLayout();
+                    }
+                    return true;
+                }
+
+                if (child is SidebarMenuGroupControl sub && sub.TrySelectItem(key, out found))
+                {
+                    // El ítem está en algún descendiente: expandir este nivel también
+                    if (!_expanded)
+                    {
+                        _expanded = true;
+                        UpdateLayout();
+                    }
+                    return true;
+                }
+            }
+
+            found = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Desactiva visualmente todos los ítems hoja de este subárbol.
+        /// No afecta al estado expandido/colapsado.
+        /// </summary>
+        internal void DeactivateAllItems()
+        {
+            foreach (var child in _children)
+            {
+                if (child is SidebarMenuItemControl item)
+                    item.IsActive = false;
+                else if (child is SidebarMenuGroupControl sub)
+                    sub.DeactivateAllItems();
+            }
+        }
+
+        /// <summary>
+        /// Colapsa este grupo y todos sus subgrupos recursivamente.
+        /// No dispara LayoutChanged — el llamador gestiona el recálculo de altura.
+        /// </summary>
+        internal void CollapseAll()
+        {
+            _expanded = false;
+            foreach (var child in _children)
+                if (child is SidebarMenuGroupControl sub)
+                    sub.CollapseAll();
+            UpdateLayout(); // recalcula Height sin disparar evento
+        }
+
         // ── Toggle ────────────────────────────────────────────────────
         public void Toggle()
         {
@@ -246,6 +304,9 @@ namespace Procont.Utils.Sidebar
             _header.IsExpanded = _expanded;
             UpdateLayout();
             LayoutChanged?.Invoke(this, EventArgs.Empty);
+            // Notificar accordion solo cuando se abre un grupo raíz
+            if (_expanded && _indentLevel == 0)
+                GroupExpanded?.Invoke(this, EventArgs.Empty);
         }
 
         // ── Layout ────────────────────────────────────────────────────
@@ -326,7 +387,6 @@ namespace Procont.Utils.Sidebar
 
             private void PaintLevel0(Graphics g)
             {
-                // Ícono FontAwesome
                 if (Icon != IconChar.None)
                 {
                     int iconSize = 16;
@@ -335,7 +395,6 @@ namespace Procont.Utils.Sidebar
                         g.DrawImage(bmp, 12, iconY, iconSize, iconSize);
                 }
 
-                // Título dorado mayúscula
                 using (var b = new SolidBrush(SidebarTheme.TextAccent))
                 {
                     var fmt = new StringFormat
@@ -356,7 +415,6 @@ namespace Procont.Utils.Sidebar
             {
                 int baseX = 14 + (_level * 18);
 
-                // Líneas de jerarquía
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                 {
                     int lineX = 14 + ((_level - 1) * 18) + 7;
@@ -364,7 +422,6 @@ namespace Procont.Utils.Sidebar
                     g.DrawLine(pen, lineX, Height / 2, baseX, Height / 2);
                 }
 
-                // Ícono o flecha
                 if (Icon != IconChar.None)
                 {
                     int iconSize = 13;
@@ -377,7 +434,6 @@ namespace Procont.Utils.Sidebar
                     DrawSubGroupArrow(g, baseX, IsExpanded);
                 }
 
-                // Título
                 Color tc = IsExpanded ? SidebarTheme.TextPrimary : Color.FromArgb(190, 200, 215);
                 using (var b = new SolidBrush(tc))
                 {

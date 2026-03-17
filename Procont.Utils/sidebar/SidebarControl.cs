@@ -34,8 +34,8 @@ namespace Procont.Utils.Sidebar
     {
         // ── Controles internos ────────────────────────────────────────
         private readonly SidebarHeaderControl _header;
-        private readonly Panel _scrollPanel;
-        private readonly Panel _menuContainer;
+        private readonly DoubleBufferedPanel _scrollPanel;
+        private readonly DoubleBufferedPanel _menuContainer;
 
         // ── Modelo (diseñador) + grupos por código ────────────────────
         private readonly List<SidebarGroupModel> _groupModels = new List<SidebarGroupModel>();
@@ -79,10 +79,6 @@ namespace Procont.Utils.Sidebar
         // PROPIEDADES DEL DISEÑADOR
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Colección de grupos del sidebar.
-        /// Editable desde Properties → Sidebar → Groups → [...]
-        /// </summary>
         [Category("Sidebar")]
         [Description("Grupos del menú. Haz clic en [...] para agregar/editar desde el diseñador.")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
@@ -190,7 +186,8 @@ namespace Procont.Utils.Sidebar
 
             _header = new SidebarHeaderControl();
 
-            _scrollPanel = new Panel
+            // ── Panel de scroll con double-buffer y sin scroll horizontal ──
+            _scrollPanel = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Fill,
                 BackColor = SidebarTheme.BackgroundDark,
@@ -200,7 +197,8 @@ namespace Procont.Utils.Sidebar
             _scrollPanel.HorizontalScroll.Visible = false;
             _scrollPanel.AutoScrollMinSize = new Size(0, 0);
 
-            _menuContainer = new Panel
+            // ── Contenedor de ítems con double-buffer ──────────────────
+            _menuContainer = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Top,
                 BackColor = SidebarTheme.BackgroundDark,
@@ -215,8 +213,7 @@ namespace Procont.Utils.Sidebar
         }
 
         // ══════════════════════════════════════════════════════════════
-        // ISupportInitialize — el diseñador llama Begin/EndInit
-        // al deserializar InitializeComponent()
+        // ISupportInitialize
         // ══════════════════════════════════════════════════════════════
         public void BeginInit() => _initializing = true;
 
@@ -230,16 +227,10 @@ namespace Procont.Utils.Sidebar
         // RECONSTRUCCIÓN DESDE MODELOS
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Reconstruye todos los controles visuales a partir de la colección Groups.
-        /// Se llama automáticamente al terminar la deserialización del diseñador,
-        /// y también puedes llamarla manualmente si modificas Groups por código.
-        /// </summary>
         public void RebuildFromModels()
         {
             if (_initializing) return;
 
-            // Limpiar controles anteriores generados desde modelos
             foreach (var ctrl in _groupControls)
             {
                 ctrl.ItemSelected -= OnGroupItemSelected;
@@ -247,7 +238,6 @@ namespace Procont.Utils.Sidebar
             }
             _groupControls.Clear();
 
-            // Reconstruir desde _groupModels
             foreach (var model in _groupModels)
             {
                 if (model == null) continue;
@@ -259,8 +249,6 @@ namespace Procont.Utils.Sidebar
             RebuildMenuContainer();
         }
 
-        // Crea un SidebarMenuGroupControl desde un SidebarGroupModel (recursivo).
-        // parentTitles e parentIcons acumulan la cadena de ancestros hacia abajo.
         private SidebarMenuGroupControl BuildGroupControl(
             SidebarGroupModel model,
             int indentLevel,
@@ -280,7 +268,6 @@ namespace Procont.Utils.Sidebar
                 Expanded = model.Expanded
             };
 
-            // Cadena de este grupo hacia abajo
             var myTitles = new List<string>(parentTitles) { model.GroupTitle };
             var myIcons = new List<IconChar>(parentIcons) { model.Icon };
 
@@ -293,11 +280,8 @@ namespace Procont.Utils.Sidebar
                     var key = string.IsNullOrEmpty(itemModel.Key) ? itemModel.ItemText : itemModel.Key;
                     var item = ctrl.AddItem(itemModel.ItemText, key, itemModel.Icon);
 
-                    // Breadcrumb: "Grupo · SubGrupo · Ítem"
                     var parts = new List<string>(myTitles) { itemModel.ItemText };
                     item.BreadcrumbPath = string.Join(" · ", parts);
-
-                    // Ícono: el propio del ítem o el del ancestro más cercano
                     item.ResolvedIcon = ResolveIcon(itemModel.Icon, myIcons);
                 }
                 else if (node is SidebarGroupModel subModel)
@@ -310,13 +294,10 @@ namespace Procont.Utils.Sidebar
 
             ctrl.ItemSelected += OnGroupItemSelected;
             ctrl.LayoutChanged += (s, e) => UpdateContainerHeight();
+            ctrl.GroupExpanded += OnGroupExpanded;
             return ctrl;
         }
 
-        /// <summary>
-        /// Devuelve itemIcon si no es None; si lo es, busca en ancestorIcons
-        /// de más cercano (último) a más lejano (primero).
-        /// </summary>
         private static IconChar ResolveIcon(IconChar itemIcon, List<IconChar> ancestorIcons)
         {
             if (itemIcon != IconChar.None) return itemIcon;
@@ -325,19 +306,85 @@ namespace Procont.Utils.Sidebar
             return IconChar.None;
         }
 
+        // ══════════════════════════════════════════════════════════════
+        // SELECCIÓN DE ÍTEM (interacción usuario o programática)
+        // ══════════════════════════════════════════════════════════════
+
         private void OnGroupItemSelected(object sender, SidebarMenuItemControl item)
         {
+            // Desactivar el ítem previamente activo
             if (_activeItem != null && _activeItem != item)
                 _activeItem.IsActive = false;
+
             _activeItem = item;
             ItemSelected?.Invoke(this, item);
         }
 
+        /// <summary>
+        /// Accordion: cuando un grupo raíz se expande, colapsa y desactiva
+        /// todos los demás grupos raíz.
+        /// </summary>
+        private void OnGroupExpanded(object sender, EventArgs e)
+        {
+            var openedGroup = sender as SidebarMenuGroupControl;
+            foreach (var grp in _groupControls)
+            {
+                if (grp == openedGroup) continue;
+                grp.DeactivateAllItems();
+                grp.CollapseAll();
+            }
+            UpdateContainerHeight();
+        }
+
+        /// <summary>
+        /// Activa programáticamente un ítem por su Key.
+        /// Expande los grupos ancestros necesarios, colapsa el resto de
+        /// grupos de nivel 0 y dispara el evento ItemSelected.
+        /// </summary>
+        /// <param name="key">Key del ítem a seleccionar.</param>
+        /// <returns>true si el ítem fue encontrado y activado.</returns>
+        public bool SelectItem(string key)
+        {
+            // Desactivar ítem actual
+            if (_activeItem != null)
+            {
+                _activeItem.IsActive = false;
+                _activeItem = null;
+            }
+
+            SidebarMenuItemControl found = null;
+            SidebarMenuGroupControl ownerGroup = null;
+
+            // Buscar en todos los grupos raíz
+            foreach (var grp in _groupControls)
+            {
+                if (grp.TrySelectItem(key, out found))
+                {
+                    ownerGroup = grp;
+                    break;
+                }
+            }
+
+            if (found == null) return false;
+
+            _activeItem = found;
+
+            // Colapsar y desactivar grupos que no contienen el ítem
+            foreach (var grp in _groupControls)
+            {
+                if (grp == ownerGroup) continue;
+                grp.DeactivateAllItems();
+                grp.CollapseAll();
+            }
+            UpdateContainerHeight();
+            ItemSelected?.Invoke(this, found);
+            return true;
+        }
+
         // ══════════════════════════════════════════════════════════════
-        // API PÚBLICA — agregar por código (complementa al diseñador)
+        // API PÚBLICA — agregar por código
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>Agrega un grupo por código en tiempo de ejecución.</summary>
         public SidebarMenuGroupControl AddGroup(
             string title,
             string key = "",
@@ -353,6 +400,7 @@ namespace Procont.Utils.Sidebar
             };
             group.ItemSelected += OnGroupItemSelected;
             group.LayoutChanged += (s, e) => UpdateContainerHeight();
+            group.GroupExpanded += OnGroupExpanded;
             _groupControls.Add(group);
             RebuildMenuContainer();
             return group;
@@ -362,52 +410,29 @@ namespace Procont.Utils.Sidebar
         // VISIBILIDAD POR ROL
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Muestra u oculta un ítem o grupo por su Key.
-        /// Útil para controlar el acceso según el rol del usuario.
-        /// </summary>
-        /// <param name="key">Key del ítem o grupo a afectar.</param>
-        /// <param name="visible">true = visible, false = oculto.</param>
         public void SetVisible(string key, bool visible)
         {
-            // Buscar en grupos raíz
             foreach (var grp in _groupControls)
                 if (SetVisibleInGroup(grp, key, visible)) return;
         }
 
-        /// <summary>
-        /// Aplica visibilidad a varios keys de una vez.
-        /// </summary>
         public void SetVisible(bool visible, params string[] keys)
         {
             foreach (var key in keys)
                 SetVisible(key, visible);
         }
 
-        /// <summary>
-        /// Oculta TODOS los ítems y grupos, luego muestra solo los keys indicados.
-        /// Ideal para aplicar un perfil de rol completo de una sola vez.
-        /// </summary>
         public void ApplyRol(params string[] allowedKeys)
         {
-            // Ocultar todo
             foreach (var grp in _groupControls)
                 SetGroupVisibility(grp, false);
 
-            // Mostrar solo los permitidos
             foreach (var key in allowedKeys)
                 SetVisible(key, true);
         }
 
-        // ── Helpers de visibilidad ────────────────────────────────────
-
-        /// <summary>
-        /// Busca recursivamente por Key y aplica la visibilidad.
-        /// Devuelve true si encontró el nodo.
-        /// </summary>
         private bool SetVisibleInGroup(SidebarMenuGroupControl grp, string key, bool visible)
         {
-            // ¿Es el grupo mismo?
             if (grp.Key == key)
             {
                 grp.Visible = visible;
@@ -415,8 +440,6 @@ namespace Procont.Utils.Sidebar
                 UpdateContainerHeight();
                 return true;
             }
-
-            // Buscar en los hijos del grupo
             return grp.SetChildVisible(key, visible, () => UpdateContainerHeight());
         }
 
@@ -427,7 +450,6 @@ namespace Procont.Utils.Sidebar
             grp.SetAllChildrenVisible(visible, () => UpdateContainerHeight());
         }
 
-        /// <summary>Configura la cabecera por código.</summary>
         public void SetCompanyInfo(string name, string subtitle, string ruc, string module, Image logo = null)
         {
             CompanyName = name;
@@ -451,14 +473,12 @@ namespace Procont.Utils.Sidebar
 
         private void RebuildMenuContainer()
         {
-            // Preservar el DashboardItem (siempre el último agregado, primero visualmente)
             Control dashItem = null;
             if (_menuContainer.Controls.Count > 0)
                 dashItem = _menuContainer.Controls[_menuContainer.Controls.Count - 1];
 
             _menuContainer.Controls.Clear();
 
-            // Apilar en orden inverso (Dock.Top invierte)
             for (int i = _groupControls.Count - 1; i >= 0; i--)
                 _menuContainer.Controls.Add(_groupControls[i]);
 
@@ -477,23 +497,42 @@ namespace Procont.Utils.Sidebar
             _menuContainer.Height = total + 10;
         }
 
-        /// <summary>
-        /// Calcula la altura real de un grupo incluyendo todos sus hijos expandidos,
-        /// de forma recursiva. SidebarMenuGroupControl.Height ya acumula hijos,
-        /// pero lo llamamos explícitamente para forzar la lectura más reciente.
-        /// </summary>
-        private static int GetGroupTotalHeight(SidebarMenuGroupControl group)
-        {
-            // El control ya gestiona su propia Height recursivamente en UpdateLayout().
-            // Simplemente la leemos — es la fuente de verdad.
-            return group.Height;
-        }
+        private static int GetGroupTotalHeight(SidebarMenuGroupControl group) => group.Height;
 
         protected override void OnResize(EventArgs e)
         {
             base.OnResize(e);
             if (_menuContainer == null) return;
             _menuContainer.Width = Width;
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // Panel con double-buffer + WS_EX_COMPOSITED
+        // Elimina el parpadeo/congelado al hacer scroll.
+        // ══════════════════════════════════════════════════════════════
+        private sealed class DoubleBufferedPanel : Panel
+        {
+            public DoubleBufferedPanel()
+            {
+                SetStyle(
+                    ControlStyles.OptimizedDoubleBuffer |
+                    ControlStyles.AllPaintingInWmPaint |
+                    ControlStyles.UserPaint,
+                    true);
+                DoubleBuffered = true;
+            }
+
+            protected override CreateParams CreateParams
+            {
+                get
+                {
+                    CreateParams cp = base.CreateParams;
+                    // WS_EX_COMPOSITED: todos los hijos se pintan de atrás
+                    // hacia adelante en un solo buffer → sin tearing ni freeze.
+                    cp.ExStyle |= 0x02000000;
+                    return cp;
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -528,7 +567,6 @@ namespace Procont.Utils.Sidebar
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                     g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
 
-                // Ícono FontAwesome
                 int iconSize = 16, iconY = (Height - iconSize) / 2;
                 using (var bmp = IconChar.ChartLine.ToBitmap(SidebarTheme.TextAccent, iconSize))
                     g.DrawImage(bmp, 12, iconY, iconSize, iconSize);
