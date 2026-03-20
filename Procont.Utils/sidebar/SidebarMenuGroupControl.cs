@@ -310,7 +310,7 @@ namespace Procont.Utils.Sidebar
         {
             int total = 0;
             foreach (var child in _children)
-                total += (child is SidebarMenuGroupControl sub) ? sub.Height : GetItemHeight();
+                total += child.Height; // 0 si oculto, valor real si visible
             return total;
         }
 
