@@ -57,6 +57,8 @@
     <Compile Include="sidebar\Models\SidebarItemModel.cs" />
     <Compile Include="sidebar\Models\SidebarNodeCollectionEditor.cs" />
     <Compile Include="sidebar\Models\SidebarNodeModel.cs" />
+    <Compile Include="sidebar\Models\SidebarRootCollectionEditor.cs" />
+    <Compile Include="sidebar\Models\SidebarRootItemModel.cs" />
     <Compile Include="sidebar\SidebarControl.cs">
       <SubType>UserControl</SubType>
     </Compile>

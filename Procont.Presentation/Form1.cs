@@ -38,7 +38,7 @@ namespace Procont.Presentation
 
         private void button1_Click(object sender, EventArgs e)
         {
-            sidebarControl1.SelectItem("Clicable");
+            sidebarControl1.SetVisible("sHidden", false);
         }
     }
 }
