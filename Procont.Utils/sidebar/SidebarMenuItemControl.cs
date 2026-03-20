@@ -138,7 +138,7 @@ namespace Procont.Utils.Sidebar
 
             int baseX = 14 + (_level * 18);
 
-            // Líneas de jerarquía
+            // Líneas de jerarquía (solo niveles > 0)
             for (int lvl = 1; lvl < _level; lvl++)
             {
                 int lx = 14 + (lvl * 18) - 11;
@@ -154,7 +154,7 @@ namespace Procont.Utils.Sidebar
                     g.DrawLine(pen, lx, Height / 2, baseX - 2, Height / 2);
             }
 
-            // Ícono o punto decorativo
+            // Ícono (solo si está definido — sin ícono no se muestra nada)
             if (_iconChar != IconChar.None)
             {
                 int iconSize = 14;
@@ -163,14 +163,10 @@ namespace Procont.Utils.Sidebar
                 using (var bmp = _iconChar.ToBitmap(dotColor, iconSize))
                     g.DrawImage(bmp, iconX, iconY, iconSize, iconSize);
             }
-            else
-            {
-                using (var b = new SolidBrush(dotColor))
-                    g.FillEllipse(b, baseX - 2, Height / 2 - 3, 6, 6);
-            }
 
-            // Texto
-            int textOffsetX = _iconChar != IconChar.None ? baseX + 16 : baseX + 10;
+            // Texto — sin ícono arranca en baseX directamente (alineado al indente)
+            int textOffsetX = _iconChar != IconChar.None ? baseX + 16 : baseX;
+
             using (var brush = new SolidBrush(textColor))
             {
                 var rect = new Rectangle(textOffsetX, 0, Width - textOffsetX - 8, Height);

@@ -21,10 +21,11 @@ namespace Procont.Utils.Sidebar
     ///   4. Dentro de cada grupo, edita Items y SubGroups de la misma forma.
     ///   5. VS serializa todo en InitializeComponent() automáticamente.
     ///
-    /// ── USO DESDE CÓDIGO ──────────────────────────────────────────────
-    ///   También puedes llamar AddGroup() / AddItem() en Form.Load.
-    ///   Ambos métodos conviven: primero se renderizan los Groups del diseñador,
-    ///   luego los que agregues por código.
+    /// ── ÍTEMS RAÍZ (al estilo Dashboard) ─────────────────────────────
+    ///   • ShowDashboard / DashboardTitle / DashboardIcon / DashboardKey
+    ///     permiten configurar o quitar el ítem Dashboard desde el diseñador.
+    ///   • AddRootItem(text, key, icon) agrega ítems raíz extra por código
+    ///     (Form.Load). Aparecen debajo del Dashboard y encima de los grupos.
     /// </summary>
     [ToolboxItem(true)]
     [Description("Sidebar de navegación con grupos colapsables y soporte de N niveles.")]
@@ -40,6 +41,8 @@ namespace Procont.Utils.Sidebar
         // ── Modelo (diseñador) + grupos por código ────────────────────
         private readonly List<SidebarGroupModel> _groupModels = new List<SidebarGroupModel>();
         private readonly List<SidebarMenuGroupControl> _groupControls = new List<SidebarMenuGroupControl>();
+        private readonly List<SidebarMenuItemControl> _rootItemControls = new List<SidebarMenuItemControl>();
+        private DashboardItemControl _dashControl = null;
         private SidebarMenuItemControl _activeItem = null;
         private bool _initializing = false;
 
@@ -59,19 +62,9 @@ namespace Procont.Utils.Sidebar
         // PROPIEDADES DEL ÍTEM SELECCIONADO
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Ruta completa del ítem activo, separada por " · ".
-        /// Ej: "COMPROBANTES SEE · GUÍAS DE REMISIÓN · REMITENTE"
-        /// Devuelve string vacío si no hay ítem seleccionado.
-        /// </summary>
         [Browsable(false)]
         public string SelectedBreadcrumb => _activeItem?.BreadcrumbPath ?? string.Empty;
 
-        /// <summary>
-        /// Ícono del ítem activo. Si el ítem no tiene ícono propio,
-        /// devuelve el del ancestro más cercano con ícono definido.
-        /// Devuelve IconChar.None si no hay selección o ningún ancestro tiene ícono.
-        /// </summary>
         [Browsable(false)]
         public IconChar SelectedIcon => _activeItem?.ResolvedIcon ?? IconChar.None;
 
@@ -102,7 +95,7 @@ namespace Procont.Utils.Sidebar
         }
 
         [Category("Sidebar — Visibilidad")]
-        [Description("Muestra u oculta el ítem Dashboard.")]
+        [Description("Muestra u oculta el ítem Dashboard. Personaliza el texto e ícono con DashboardTitle / DashboardIcon.")]
         [DefaultValue(true)]
         public bool ShowDashboard
         {
@@ -110,11 +103,48 @@ namespace Procont.Utils.Sidebar
             set
             {
                 _showDashboard = value;
-                if (_menuContainer == null || _menuContainer.Controls.Count == 0) return;
-                var dash = _menuContainer.Controls[_menuContainer.Controls.Count - 1];
-                dash.Visible = value;
-                dash.Height = value ? SidebarTheme.GroupHeight : 0;
+                if (_dashControl == null) return;
+                _dashControl.Visible = value;
+                _dashControl.Height = value ? SidebarTheme.GroupHeight : 0;
                 UpdateContainerHeight();
+            }
+        }
+
+        // ── Dashboard configurable ────────────────────────────────────
+
+        [Category("Sidebar — Dashboard")]
+        [Description("Texto del ítem Dashboard. Cámbialo para personalizar el primer ítem raíz.")]
+        [DefaultValue("DASHBOARD")]
+        public string DashboardTitle
+        {
+            get => _dashControl?.Title ?? "DASHBOARD";
+            set
+            {
+                if (_dashControl != null) { _dashControl.Title = value; _dashControl.Invalidate(); }
+            }
+        }
+
+        [Category("Sidebar — Dashboard")]
+        [Description("Ícono del ítem Dashboard (IconChar.*). Usa IconChar.None para ocultarlo.")]
+        [DefaultValue(IconChar.ChartLine)]
+        public IconChar DashboardIcon
+        {
+            get => _dashControl?.Icon ?? IconChar.ChartLine;
+            set
+            {
+                if (_dashControl != null) { _dashControl.Icon = value; _dashControl.Invalidate(); }
+            }
+        }
+
+        [Category("Sidebar — Dashboard")]
+        [Description("Key del ítem Dashboard, útil para SelectItem(key).")]
+        [DefaultValue("__dashboard__")]
+        public string DashboardKey
+        {
+            get => _dashControl?.Key ?? "__dashboard__";
+            set
+            {
+                if (_dashControl != null) _dashControl.Key = value;
             }
         }
 
@@ -186,7 +216,6 @@ namespace Procont.Utils.Sidebar
 
             _header = new SidebarHeaderControl();
 
-            // ── Panel de scroll con double-buffer y sin scroll horizontal ──
             _scrollPanel = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Fill,
@@ -197,7 +226,6 @@ namespace Procont.Utils.Sidebar
             _scrollPanel.HorizontalScroll.Visible = false;
             _scrollPanel.AutoScrollMinSize = new Size(0, 0);
 
-            // ── Contenedor de ítems con double-buffer ──────────────────
             _menuContainer = new DoubleBufferedPanel
             {
                 Dock = DockStyle.Top,
@@ -307,12 +335,11 @@ namespace Procont.Utils.Sidebar
         }
 
         // ══════════════════════════════════════════════════════════════
-        // SELECCIÓN DE ÍTEM (interacción usuario o programática)
+        // SELECCIÓN DE ÍTEM
         // ══════════════════════════════════════════════════════════════
 
         private void OnGroupItemSelected(object sender, SidebarMenuItemControl item)
         {
-            // Desactivar el ítem previamente activo
             if (_activeItem != null && _activeItem != item)
                 _activeItem.IsActive = false;
 
@@ -320,10 +347,6 @@ namespace Procont.Utils.Sidebar
             ItemSelected?.Invoke(this, item);
         }
 
-        /// <summary>
-        /// Accordion: cuando un grupo raíz se expande, colapsa y desactiva
-        /// todos los demás grupos raíz.
-        /// </summary>
         private void OnGroupExpanded(object sender, EventArgs e)
         {
             var openedGroup = sender as SidebarMenuGroupControl;
@@ -336,16 +359,8 @@ namespace Procont.Utils.Sidebar
             UpdateContainerHeight();
         }
 
-        /// <summary>
-        /// Activa programáticamente un ítem por su Key.
-        /// Expande los grupos ancestros necesarios, colapsa el resto de
-        /// grupos de nivel 0 y dispara el evento ItemSelected.
-        /// </summary>
-        /// <param name="key">Key del ítem a seleccionar.</param>
-        /// <returns>true si el ítem fue encontrado y activado.</returns>
         public bool SelectItem(string key)
         {
-            // Desactivar ítem actual
             if (_activeItem != null)
             {
                 _activeItem.IsActive = false;
@@ -355,27 +370,44 @@ namespace Procont.Utils.Sidebar
             SidebarMenuItemControl found = null;
             SidebarMenuGroupControl ownerGroup = null;
 
-            // Buscar en todos los grupos raíz
-            foreach (var grp in _groupControls)
+            // Buscar primero en ítems raíz
+            foreach (var rootItem in _rootItemControls)
             {
-                if (grp.TrySelectItem(key, out found))
+                if (rootItem.Key == key)
                 {
-                    ownerGroup = grp;
+                    found = rootItem;
                     break;
+                }
+            }
+
+            // Buscar en grupos
+            if (found == null)
+            {
+                foreach (var grp in _groupControls)
+                {
+                    if (grp.TrySelectItem(key, out found))
+                    {
+                        ownerGroup = grp;
+                        break;
+                    }
                 }
             }
 
             if (found == null) return false;
 
+            found.IsActive = true;
             _activeItem = found;
 
-            // Colapsar y desactivar grupos que no contienen el ítem
-            foreach (var grp in _groupControls)
+            if (ownerGroup != null)
             {
-                if (grp == ownerGroup) continue;
-                grp.DeactivateAllItems();
-                grp.CollapseAll();
+                foreach (var grp in _groupControls)
+                {
+                    if (grp == ownerGroup) continue;
+                    grp.DeactivateAllItems();
+                    grp.CollapseAll();
+                }
             }
+
             UpdateContainerHeight();
             ItemSelected?.Invoke(this, found);
             return true;
@@ -385,6 +417,9 @@ namespace Procont.Utils.Sidebar
         // API PÚBLICA — agregar por código
         // ══════════════════════════════════════════════════════════════
 
+        /// <summary>
+        /// Agrega un grupo colapsable de nivel raíz por código.
+        /// </summary>
         public SidebarMenuGroupControl AddGroup(
             string title,
             string key = "",
@@ -404,6 +439,35 @@ namespace Procont.Utils.Sidebar
             _groupControls.Add(group);
             RebuildMenuContainer();
             return group;
+        }
+
+        /// <summary>
+        /// Agrega un ítem de nivel raíz (similar al Dashboard) por código.
+        /// Aparece debajo del Dashboard y encima de los grupos.
+        /// Dispara el evento ItemSelected igual que cualquier otro ítem.
+        /// </summary>
+        /// <param name="text">Texto visible.</param>
+        /// <param name="key">Clave para SelectItem(key). Si vacío usa el texto.</param>
+        /// <param name="icon">Ícono FontAwesome. IconChar.None = sin ícono.</param>
+        public SidebarMenuItemControl AddRootItem(
+            string text,
+            string key = "",
+            IconChar icon = IconChar.None)
+        {
+            var resolvedKey = string.IsNullOrEmpty(key) ? text : key;
+            var item = new SidebarMenuItemControl(text, resolvedKey, icon, level: 0);
+            item.BreadcrumbPath = text;
+            item.ResolvedIcon = icon;
+            item.ItemSelected += (s, e) =>
+            {
+                if (_activeItem != null && _activeItem != item)
+                    _activeItem.IsActive = false;
+                _activeItem = item;
+                ItemSelected?.Invoke(this, item);
+            };
+            _rootItemControls.Add(item);
+            RebuildMenuContainer();
+            return item;
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -465,25 +529,33 @@ namespace Procont.Utils.Sidebar
 
         private void AddDashboardItem()
         {
-            var dash = new DashboardItemControl();
-            dash.Click += (s, e) => ItemSelected?.Invoke(this, null);
-            _menuContainer.Controls.Add(dash);
+            _dashControl = new DashboardItemControl();
+            _dashControl.Click += (s, e) =>
+            {
+                // Desactivar ítem previo si lo hubiera
+                if (_activeItem != null) { _activeItem.IsActive = false; _activeItem = null; }
+                ItemSelected?.Invoke(this, null);
+            };
+            _menuContainer.Controls.Add(_dashControl);
             UpdateContainerHeight();
         }
 
         private void RebuildMenuContainer()
         {
-            Control dashItem = null;
-            if (_menuContainer.Controls.Count > 0)
-                dashItem = _menuContainer.Controls[_menuContainer.Controls.Count - 1];
-
             _menuContainer.Controls.Clear();
 
+            // Grupos al fondo (visualmente aparecen debajo porque DockStyle.Top
+            // posiciona el último añadido encima)
             for (int i = _groupControls.Count - 1; i >= 0; i--)
                 _menuContainer.Controls.Add(_groupControls[i]);
 
-            if (dashItem != null)
-                _menuContainer.Controls.Add(dashItem);
+            // Ítems raíz extra (encima de los grupos, debajo del Dashboard)
+            for (int i = _rootItemControls.Count - 1; i >= 0; i--)
+                _menuContainer.Controls.Add(_rootItemControls[i]);
+
+            // Dashboard al tope
+            if (_dashControl != null)
+                _menuContainer.Controls.Add(_dashControl);
 
             UpdateContainerHeight();
         }
@@ -491,13 +563,17 @@ namespace Procont.Utils.Sidebar
         private void UpdateContainerHeight()
         {
             if (_menuContainer == null) return;
-            int total = SidebarTheme.GroupHeight; // dashboard
+
+            int total = _showDashboard ? SidebarTheme.GroupHeight : 0;
+
+            foreach (var r in _rootItemControls)
+                if (r.Visible) total += r.Height;
+
             foreach (var g in _groupControls)
-                total += GetGroupTotalHeight(g);
+                total += g.Height;
+
             _menuContainer.Height = total + 10;
         }
-
-        private static int GetGroupTotalHeight(SidebarMenuGroupControl group) => group.Height;
 
         protected override void OnResize(EventArgs e)
         {
@@ -508,7 +584,6 @@ namespace Procont.Utils.Sidebar
 
         // ══════════════════════════════════════════════════════════════
         // Panel con double-buffer + WS_EX_COMPOSITED
-        // Elimina el parpadeo/congelado al hacer scroll.
         // ══════════════════════════════════════════════════════════════
         private sealed class DoubleBufferedPanel : Panel
         {
@@ -527,20 +602,26 @@ namespace Procont.Utils.Sidebar
                 get
                 {
                     CreateParams cp = base.CreateParams;
-                    // WS_EX_COMPOSITED: todos los hijos se pintan de atrás
-                    // hacia adelante en un solo buffer → sin tearing ni freeze.
-                    cp.ExStyle |= 0x02000000;
+                    cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
                     return cp;
                 }
             }
         }
 
         // ══════════════════════════════════════════════════════════════
-        // Dashboard integrado
+        // Ítem raíz configurable (Dashboard y similares)
         // ══════════════════════════════════════════════════════════════
         private class DashboardItemControl : Control
         {
-            private bool _hovered = false, _active = false;
+            private bool _hovered = false;
+            private bool _active = false;
+
+            /// <summary>Texto del ítem (se muestra en mayúsculas).</summary>
+            public string Title { get; set; } = "DASHBOARD";
+            /// <summary>Ícono FontAwesome. IconChar.None = sin ícono.</summary>
+            public IconChar Icon { get; set; } = IconChar.ChartLine;
+            /// <summary>Clave para SelectItem(key).</summary>
+            public string Key { get; set; } = "__dashboard__";
 
             public DashboardItemControl()
             {
@@ -567,15 +648,25 @@ namespace Procont.Utils.Sidebar
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                     g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
 
-                int iconSize = 16, iconY = (Height - iconSize) / 2;
-                using (var bmp = IconChar.ChartLine.ToBitmap(SidebarTheme.TextAccent, iconSize))
-                    g.DrawImage(bmp, 12, iconY, iconSize, iconSize);
+                int textX = 14;
+                if (Icon != IconChar.None)
+                {
+                    int iconSize = 16, iconY = (Height - iconSize) / 2;
+                    using (var bmp = Icon.ToBitmap(SidebarTheme.TextAccent, iconSize))
+                        g.DrawImage(bmp, 12, iconY, iconSize, iconSize);
+                    textX = 36;
+                }
 
                 using (var b = new SolidBrush(SidebarTheme.TextAccent))
                 {
-                    var fmt = new StringFormat { Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center };
-                    g.DrawString("DASHBOARD", SidebarTheme.FontGroupTitle, b,
-                        new RectangleF(36, 0, Width - 52, Height), fmt);
+                    var fmt = new StringFormat
+                    {
+                        Alignment = StringAlignment.Near,
+                        LineAlignment = StringAlignment.Center,
+                        Trimming = StringTrimming.EllipsisCharacter
+                    };
+                    g.DrawString(Title.ToUpper(), SidebarTheme.FontGroupTitle, b,
+                        new RectangleF(textX, 0, Width - textX - 16, Height), fmt);
                 }
             }
         }

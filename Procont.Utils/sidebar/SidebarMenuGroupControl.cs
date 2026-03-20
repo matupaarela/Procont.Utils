@@ -230,12 +230,6 @@ namespace Procont.Utils.Sidebar
         // SELECCIÓN PROGRAMÁTICA
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Busca un ítem por Key de forma recursiva.
-        /// Si lo encuentra: lo activa y expande todos los grupos ancestros en la ruta.
-        /// No dispara LayoutChanged — el llamador debe invocar UpdateContainerHeight().
-        /// </summary>
-        /// <returns>true si el ítem fue encontrado en este subárbol.</returns>
         internal bool TrySelectItem(string key, out SidebarMenuItemControl found)
         {
             foreach (var child in _children)
@@ -244,23 +238,13 @@ namespace Procont.Utils.Sidebar
                 {
                     item.IsActive = true;
                     found = item;
-                    // Expandir este grupo si estaba colapsado
-                    if (!_expanded)
-                    {
-                        _expanded = true;
-                        UpdateLayout();
-                    }
+                    if (!_expanded) { _expanded = true; UpdateLayout(); }
                     return true;
                 }
 
                 if (child is SidebarMenuGroupControl sub && sub.TrySelectItem(key, out found))
                 {
-                    // El ítem está en algún descendiente: expandir este nivel también
-                    if (!_expanded)
-                    {
-                        _expanded = true;
-                        UpdateLayout();
-                    }
+                    if (!_expanded) { _expanded = true; UpdateLayout(); }
                     return true;
                 }
             }
@@ -269,10 +253,6 @@ namespace Procont.Utils.Sidebar
             return false;
         }
 
-        /// <summary>
-        /// Desactiva visualmente todos los ítems hoja de este subárbol.
-        /// No afecta al estado expandido/colapsado.
-        /// </summary>
         internal void DeactivateAllItems()
         {
             foreach (var child in _children)
@@ -284,17 +264,13 @@ namespace Procont.Utils.Sidebar
             }
         }
 
-        /// <summary>
-        /// Colapsa este grupo y todos sus subgrupos recursivamente.
-        /// No dispara LayoutChanged — el llamador gestiona el recálculo de altura.
-        /// </summary>
         internal void CollapseAll()
         {
             _expanded = false;
             foreach (var child in _children)
                 if (child is SidebarMenuGroupControl sub)
                     sub.CollapseAll();
-            UpdateLayout(); // recalcula Height sin disparar evento
+            UpdateLayout();
         }
 
         // ── Toggle ────────────────────────────────────────────────────
@@ -304,7 +280,6 @@ namespace Procont.Utils.Sidebar
             _header.IsExpanded = _expanded;
             UpdateLayout();
             LayoutChanged?.Invoke(this, EventArgs.Empty);
-            // Notificar accordion solo cuando se abre un grupo raíz
             if (_expanded && _indentLevel == 0)
                 GroupExpanded?.Invoke(this, EventArgs.Empty);
         }
@@ -408,13 +383,15 @@ namespace Procont.Utils.Sidebar
                         new RectangleF(tx, 0, Width - tx - 26, Height), fmt);
                 }
 
-                DrawChevron(g, IsExpanded, SidebarTheme.TextSubdued, large: true);
+                // Indicador +/− al final
+                DrawPlusMinus(g, IsExpanded, SidebarTheme.TextSubdued, large: true);
             }
 
             private void PaintLevelN(Graphics g)
             {
                 int baseX = 14 + (_level * 18);
 
+                // Líneas de jerarquía
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                 {
                     int lineX = 14 + ((_level - 1) * 18) + 7;
@@ -422,22 +399,21 @@ namespace Procont.Utils.Sidebar
                     g.DrawLine(pen, lineX, Height / 2, baseX, Height / 2);
                 }
 
+                // Ícono (solo si está definido — sin ícono no se muestra nada)
+                // Offsets idénticos a SidebarMenuItemControl para consistencia visual.
                 if (Icon != IconChar.None)
                 {
                     int iconSize = 13;
                     int iconY = (Height - iconSize) / 2;
                     using (var bmp = Icon.ToBitmap(IsExpanded ? SidebarTheme.TextAccent : SidebarTheme.TextSubdued, iconSize))
-                        g.DrawImage(bmp, baseX + 2, iconY, iconSize, iconSize);
-                }
-                else
-                {
-                    DrawSubGroupArrow(g, baseX, IsExpanded);
+                        g.DrawImage(bmp, baseX - 2, iconY, iconSize, iconSize);
                 }
 
+                // Texto — mismos offsets que el ítem hoja
                 Color tc = IsExpanded ? SidebarTheme.TextPrimary : Color.FromArgb(190, 200, 215);
                 using (var b = new SolidBrush(tc))
                 {
-                    int tx = baseX + (Icon != IconChar.None ? 20 : 18);
+                    int tx = baseX + (Icon != IconChar.None ? 16 : 0);
                     var fmt = new StringFormat
                     {
                         Alignment = StringAlignment.Near,
@@ -445,33 +421,39 @@ namespace Procont.Utils.Sidebar
                         Trimming = StringTrimming.EllipsisCharacter
                     };
                     g.DrawString(Title, SidebarTheme.FontMenuItem, b,
-                        new RectangleF(tx, 0, Width - tx - 22, Height), fmt);
+                        new RectangleF(tx, 0, Width - tx - 26, Height), fmt);
                 }
 
-                DrawChevron(g, IsExpanded, SidebarTheme.BorderColor, large: false);
+                // Indicador +/− al final
+                DrawPlusMinus(g, IsExpanded, SidebarTheme.TextSubdued, large: false);
             }
 
-            private void DrawSubGroupArrow(Graphics g, int x, bool expanded)
+            /// <summary>
+            /// Dibuja chevron-right (colapsado) o chevron-down (expandido) al borde derecho.
+            /// </summary>
+            private void DrawPlusMinus(Graphics g, bool expanded, Color color, bool large)
             {
+                int cx = Width - 14;
                 int cy = Height / 2;
-                using (var pen = new Pen(expanded ? SidebarTheme.TextAccent : SidebarTheme.TextSubdued, 1.5f))
-                {
-                    pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
-                    pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                    if (expanded) { g.DrawLine(pen, x + 1, cy - 2, x + 5, cy + 2); g.DrawLine(pen, x + 5, cy + 2, x + 9, cy - 2); }
-                    else { g.DrawLine(pen, x + 3, cy - 4, x + 7, cy); g.DrawLine(pen, x + 7, cy, x + 3, cy + 4); }
-                }
-            }
+                int half = large ? 4 : 3;
 
-            private void DrawChevron(Graphics g, bool down, Color color, bool large)
-            {
-                int cx = Width - 16, cy = Height / 2, half = large ? 4 : 3;
                 using (var pen = new Pen(color, 1.5f))
                 {
                     pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
                     pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
-                    if (down) { g.DrawLine(pen, cx - half, cy - 1, cx, cy + 2); g.DrawLine(pen, cx, cy + 2, cx + half, cy - 1); }
-                    else { g.DrawLine(pen, cx - half, cy + 1, cx, cy - 2); g.DrawLine(pen, cx, cy - 2, cx + half, cy + 1); }
+
+                    if (expanded)
+                    {
+                        // Chevron down: ∨
+                        g.DrawLine(pen, cx - half, cy - 1, cx, cy + half - 1);
+                        g.DrawLine(pen, cx, cy + half - 1, cx + half, cy - 1);
+                    }
+                    else
+                    {
+                        // Chevron right: chevron-down rotado -90°
+                        g.DrawLine(pen, cx - 1, cy + half, cx + half - 1, cy);
+                        g.DrawLine(pen, cx + half - 1, cy, cx - 1, cy - half);
+                    }
                 }
             }
         }
