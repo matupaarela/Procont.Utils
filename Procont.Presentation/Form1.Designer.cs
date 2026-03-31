@@ -107,6 +107,7 @@
             sidebarGroupModel3.Children.Add(sidebarItemModel8);
             sidebarGroupModel3.Children.Add(sidebarGroupModel4);
             sidebarGroupModel3.Icon = FontAwesome.Sharp.IconChar.Question;
+            sidebarGroupModel5.Badge = Procont.Utils.sidebar.Models.SidebarBadge.New;
             sidebarItemModel11.ItemText = "Nuevo ítem Clicable";
             sidebarItemModel11.Key = "Clicable";
             sidebarItemModel12.ItemText = "Nuevo ítem";
@@ -119,9 +120,10 @@
             sidebarItemModel14.ItemText = "Nuevo ítem";
             sidebarGroupModel5.Children.Add(sidebarGroupModel6);
             sidebarGroupModel5.Children.Add(sidebarItemModel14);
-            sidebarGroupModel5.GroupTitle = "Grupo Text h";
+            sidebarGroupModel5.GroupTitle = "COMPRAS";
+            sidebarRootItemModel1.Badge = Procont.Utils.sidebar.Models.SidebarBadge.Beta;
             sidebarRootItemModel1.Icon = FontAwesome.Sharp.IconChar.Hourglass1;
-            sidebarRootItemModel1.ItemText = "SSSS em";
+            sidebarRootItemModel1.ItemText = "FINANCIERO";
             this.sidebarControl1.Groups.Add(sidebarGroupModel1);
             this.sidebarControl1.Groups.Add(sidebarGroupModel3);
             this.sidebarControl1.Groups.Add(sidebarGroupModel5);

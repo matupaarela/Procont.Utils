@@ -53,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="sidebar\Models\SidebarBadge.cs" />
     <Compile Include="sidebar\Models\SidebarGroupModel.cs" />
     <Compile Include="sidebar\Models\SidebarItemModel.cs" />
     <Compile Include="sidebar\Models\SidebarNodeCollectionEditor.cs" />

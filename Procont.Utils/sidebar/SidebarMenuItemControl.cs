@@ -1,4 +1,5 @@
 ﻿using FontAwesome.Sharp;
+using Procont.Utils.sidebar.Models;
 using System;
 using System.ComponentModel;
 using System.Drawing;
@@ -8,8 +9,9 @@ namespace Procont.Utils.Sidebar
 {
     /// <summary>
     /// Ítem hoja del sidebar.
-    /// - Key  : identificador lógico (no cambia aunque el texto cambie).
-    /// - Icon : ícono FontAwesome.Sharp (IconChar.*).
+    /// - Key   : identificador lógico (no cambia aunque el texto cambie).
+    /// - Icon  : ícono FontAwesome.Sharp (IconChar.*).
+    /// - Badge : insignia informativa opcional (None / New / Beta).
     /// </summary>
     [ToolboxItem(false)]
     [DesignTimeVisible(false)]
@@ -19,6 +21,7 @@ namespace Procont.Utils.Sidebar
         private string _itemText = "Ítem";
         private string _key = "";
         private IconChar _iconChar = IconChar.None;
+        private SidebarBadge _badge = SidebarBadge.None;
         private bool _isActive = false;
         private bool _isHovered = false;
         private readonly int _level;
@@ -44,12 +47,21 @@ namespace Procont.Utils.Sidebar
         }
 
         [Category("Sidebar")]
-        [Description("Ícono FontAwesome del ítem. Requiere el paquete NuGet FontAwesome.Sharp.")]
+        [Description("Ícono FontAwesome del ítem.")]
         [DefaultValue(IconChar.None)]
         public IconChar Icon
         {
             get => _iconChar;
             set { _iconChar = value; Invalidate(); }
+        }
+
+        [Category("Sidebar")]
+        [Description("Insignia informativa: None, New (verde) o Beta (ámbar).")]
+        [DefaultValue(SidebarBadge.None)]
+        public SidebarBadge Badge
+        {
+            get => _badge;
+            set { _badge = value; Invalidate(); }
         }
 
         [Category("Sidebar")]
@@ -66,21 +78,11 @@ namespace Procont.Utils.Sidebar
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
 
-        // ── Propiedades resueltas al construir el árbol ───────────────
+        // ── Propiedades resueltas al construir el árbol ────────────────
 
-        /// <summary>
-        /// Ruta completa del ítem concatenando los títulos de sus padres.
-        /// Ej: "COMPROBANTES SEE · GUÍAS DE REMISIÓN · REMITENTE"
-        /// Se asigna automáticamente al construir el sidebar.
-        /// </summary>
         [Browsable(false)]
         public string BreadcrumbPath { get; internal set; } = "";
 
-        /// <summary>
-        /// Ícono resuelto: el propio del ítem o, si es None, el del ancestro más cercano
-        /// que tenga ícono definido.
-        /// Se asigna automáticamente al construir el sidebar.
-        /// </summary>
         [Browsable(false)]
         public IconChar ResolvedIcon { get; internal set; } = IconChar.None;
 
@@ -96,6 +98,7 @@ namespace Procont.Utils.Sidebar
             _key = key;
             _iconChar = icon;
             _level = level;
+
             Height = SidebarTheme.ItemHeight;
             Dock = DockStyle.Top;
             Cursor = Cursors.Hand;
@@ -154,22 +157,25 @@ namespace Procont.Utils.Sidebar
                     g.DrawLine(pen, lx, Height / 2, baseX - 2, Height / 2);
             }
 
-            // Ícono (solo si está definido — sin ícono no se muestra nada)
+            // Ícono
             if (_iconChar != IconChar.None)
             {
-                int iconSize = 14;
-                int iconX = baseX - 2;
-                int iconY = (Height - iconSize) / 2;
+                int iconSize = 14, iconX = baseX - 2, iconY = (Height - iconSize) / 2;
                 using (var bmp = _iconChar.ToBitmap(dotColor, iconSize))
                     g.DrawImage(bmp, iconX, iconY, iconSize, iconSize);
             }
 
-            // Texto — sin ícono arranca en baseX directamente (alineado al indente)
+            // Badge — reservar espacio a la derecha
+            int badgeWidth = SidebarTheme.GetBadgeWidth(g, _badge);
+            int badgeReserve = badgeWidth > 0 ? badgeWidth + 6 : 0;
+
+            // Texto
             int textOffsetX = _iconChar != IconChar.None ? baseX + 16 : baseX;
 
             using (var brush = new SolidBrush(textColor))
             {
-                var rect = new Rectangle(textOffsetX, 0, Width - textOffsetX - 8, Height);
+                var rect = new Rectangle(textOffsetX, 0,
+                    Width - textOffsetX - 8 - badgeReserve, Height);
                 var fmt = new StringFormat
                 {
                     Alignment = StringAlignment.Near,
@@ -178,6 +184,10 @@ namespace Procont.Utils.Sidebar
                 };
                 g.DrawString(_itemText, SidebarTheme.FontMenuItem, brush, rect, fmt);
             }
+
+            // Badge pill
+            if (_badge != SidebarBadge.None)
+                SidebarTheme.DrawBadge(g, _badge, Width - 6, Height / 2);
         }
     }
 }

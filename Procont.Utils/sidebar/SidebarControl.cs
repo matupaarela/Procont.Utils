@@ -1,4 +1,5 @@
 ﻿using FontAwesome.Sharp;
+using Procont.Utils.sidebar.Models;
 using Procont.Utils.Sidebar.Models;
 using System;
 using System.Collections.Generic;
@@ -36,8 +37,6 @@ namespace Procont.Utils.Sidebar
         private readonly DoubleBufferedPanel _menuContainer;
 
         // ── Modelo unificado (diseñador) ──────────────────────────────
-        // Contiene SidebarRootItemModel y SidebarGroupModel mezclados,
-        // en el orden visual exacto que el usuario defina.
         private readonly List<SidebarNodeModel> _nodeModels = new List<SidebarNodeModel>();
 
         // ── Controles generados en tiempo de ejecución ────────────────
@@ -74,11 +73,6 @@ namespace Procont.Utils.Sidebar
         // PROPIEDADES DEL DISEÑADOR
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Colección raíz del sidebar. Add ▼ ofrece:
-        ///   • SidebarRootItemModel  → ítem directo (sin hijos)
-        ///   • SidebarGroupModel     → grupo colapsable
-        /// </summary>
         [Category("Sidebar")]
         [Description("Elementos raíz del menú. Add ▼ permite elegir entre ítem directo o grupo colapsable.")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
@@ -173,7 +167,7 @@ namespace Procont.Utils.Sidebar
         [DefaultValue(null)]
         public Image CompanyLogo { get => _header.Logo; set { _header.Logo = value; } }
 
-        // ── Ocultar heredadas irrelevantes ────────────────────────────
+        // ── Ocultar heredadas ─────────────────────────────────────────
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
         [Browsable(false)] public override Font Font { get => base.Font; set => base.Font = value; }
@@ -237,13 +231,11 @@ namespace Procont.Utils.Sidebar
         {
             if (_initializing) return;
 
-            // Limpiar controles anteriores
             foreach (var ctrl in _nodeControls)
                 _menuContainer.Controls.Remove(ctrl);
             _nodeControls.Clear();
             _groupControls.Clear();
 
-            // Construir un control por cada nodo raíz, en orden
             foreach (var node in _nodeModels)
             {
                 if (node == null) continue;
@@ -272,7 +264,8 @@ namespace Procont.Utils.Sidebar
             {
                 Title = model.ItemText,
                 Key = string.IsNullOrEmpty(model.Key) ? model.ItemText : model.Key,
-                Icon = model.Icon
+                Icon = model.Icon,
+                Badge = model.Badge          // ← propagar badge
             };
             ctrl.RootItemSelected += OnRootItemSelected;
             return ctrl;
@@ -295,7 +288,8 @@ namespace Procont.Utils.Sidebar
                 GroupTitle = model.GroupTitle,
                 Key = string.IsNullOrEmpty(model.Key) ? model.GroupTitle : model.Key,
                 GroupIcon = model.Icon,
-                Expanded = model.Expanded
+                Expanded = model.Expanded,
+                Badge = model.Badge     // ← propagar badge al grupo
             };
 
             var myTitles = new List<string>(parentTitles) { model.GroupTitle };
@@ -308,7 +302,7 @@ namespace Procont.Utils.Sidebar
                 if (node is SidebarItemModel itemModel)
                 {
                     var key = string.IsNullOrEmpty(itemModel.Key) ? itemModel.ItemText : itemModel.Key;
-                    var item = ctrl.AddItem(itemModel.ItemText, key, itemModel.Icon);
+                    var item = ctrl.AddItem(itemModel.ItemText, key, itemModel.Icon, itemModel.Badge); // ← badge
 
                     var parts = new List<string>(myTitles) { itemModel.ItemText };
                     item.BreadcrumbPath = string.Join(" · ", parts);
@@ -352,7 +346,6 @@ namespace Procont.Utils.Sidebar
             var ctrl = sender as RootItemControl;
             if (ctrl == null) return;
 
-            // Desactivar ítem de grupo previo
             if (_activeItem != null) { _activeItem.IsActive = false; _activeItem = null; }
             ClearActiveRootItem();
 
@@ -378,14 +371,10 @@ namespace Procont.Utils.Sidebar
 
         private void OnGroupItemSelected(object sender, SidebarMenuItemControl item)
         {
-            // Guard != item: item.IsActive ya fue puesto a true en OnClick
-            // ANTES de que el evento burbujee hasta aquí. Sin este guard,
-            // si _activeItem apunta al mismo objeto lo desactivaríamos.
             if (_activeItem != null && _activeItem != item)
                 _activeItem.IsActive = false;
 
-            ClearActiveRootItem();  // limpiar ítem raíz si estaba activo
-
+            ClearActiveRootItem();
             _activeItem = item;
             ItemSelected?.Invoke(this, item);
         }
@@ -407,7 +396,6 @@ namespace Procont.Utils.Sidebar
             if (_activeItem != null) { _activeItem.IsActive = false; _activeItem = null; }
             ClearActiveRootItem();
 
-            // Buscar en ítems raíz
             foreach (var ctrl in _nodeControls)
             {
                 if (ctrl is RootItemControl root && root.Key == key)
@@ -417,7 +405,6 @@ namespace Procont.Utils.Sidebar
                 }
             }
 
-            // Buscar en grupos
             SidebarMenuItemControl found = null;
             SidebarMenuGroupControl ownerGroup = null;
 
@@ -454,14 +441,16 @@ namespace Procont.Utils.Sidebar
             string title,
             string key = "",
             IconChar icon = IconChar.None,
-            bool expanded = false)
+            bool expanded = false,
+            SidebarBadge badge = SidebarBadge.None)
         {
             var group = new SidebarMenuGroupControl(0)
             {
                 GroupTitle = title,
                 Key = string.IsNullOrEmpty(key) ? title : key,
                 GroupIcon = icon,
-                Expanded = expanded
+                Expanded = expanded,
+                Badge = badge
             };
             group.ItemSelected += OnGroupItemSelected;
             group.LayoutChanged += (s, e) => UpdateContainerHeight();
@@ -475,13 +464,15 @@ namespace Procont.Utils.Sidebar
         public RootItemControl AddRootItem(
             string text,
             string key = "",
-            IconChar icon = IconChar.None)
+            IconChar icon = IconChar.None,
+            SidebarBadge badge = SidebarBadge.None)
         {
             var ctrl = new RootItemControl
             {
                 Title = text,
                 Key = string.IsNullOrEmpty(key) ? text : key,
-                Icon = icon
+                Icon = icon,
+                Badge = badge
             };
             ctrl.RootItemSelected += OnRootItemSelected;
             _nodeControls.Add(ctrl);
@@ -531,7 +522,10 @@ namespace Procont.Utils.Sidebar
 
         public void SetCompanyInfo(string name, string subtitle, string ruc, string module, Image logo = null)
         {
-            CompanyName = name; CompanySubtitle = subtitle; Ruc = ruc; Module = module;
+            CompanyName = name;
+            CompanySubtitle = subtitle;
+            Ruc = ruc;
+            Module = module;
             if (logo != null) CompanyLogo = logo;
         }
 
@@ -556,15 +550,9 @@ namespace Procont.Utils.Sidebar
         {
             _menuContainer.Controls.Clear();
 
-            // DockStyle.Top: el último añadido queda visualmente al tope.
-            // Añadimos en orden inverso para que el primero del modelo
-            // quede abajo y el último quede arriba — es decir, orden inverso
-            // al visual deseado... no: como queremos orden natural de arriba
-            // a abajo igual que _nodeModels, añadimos en orden inverso.
             for (int i = _nodeControls.Count - 1; i >= 0; i--)
                 _menuContainer.Controls.Add(_nodeControls[i]);
 
-            // Dashboard siempre al tope
             if (_dashControl != null)
                 _menuContainer.Controls.Add(_dashControl);
 
@@ -596,7 +584,7 @@ namespace Procont.Utils.Sidebar
         }
 
         // ══════════════════════════════════════════════════════════════
-        // Panel con double-buffer + WS_EX_COMPOSITED
+        // Panel con double-buffer
         // ══════════════════════════════════════════════════════════════
         private sealed class DoubleBufferedPanel : Panel
         {
@@ -622,7 +610,6 @@ namespace Procont.Utils.Sidebar
 
         // ══════════════════════════════════════════════════════════════
         // RootItemControl — ítem raíz nivel 0, sin hijos.
-        // Mismo estilo visual que un grupo padre pero clickeable directo.
         // ══════════════════════════════════════════════════════════════
         public class RootItemControl : Control
         {
@@ -632,6 +619,7 @@ namespace Procont.Utils.Sidebar
             public string Title { get; set; } = "Ítem";
             public IconChar Icon { get; set; } = IconChar.None;
             public string Key { get; set; } = "";
+            public SidebarBadge Badge { get; set; } = SidebarBadge.None;
 
             public bool IsActive
             {
@@ -668,14 +656,12 @@ namespace Procont.Utils.Sidebar
                         _hovered ? SidebarTheme.BackgroundHover :
                                    SidebarTheme.BackgroundDark);
 
-                // Barra activa izquierda
                 if (_active)
                 {
                     using (var b = new SolidBrush(SidebarTheme.TextAccent))
                         g.FillRectangle(b, 0, 5, 3, Height - 10);
                 }
 
-                // Línea divisoria inferior
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                     g.DrawLine(pen, 0, Height - 1, Width, Height - 1);
 
@@ -688,6 +674,10 @@ namespace Procont.Utils.Sidebar
                     textX = 36;
                 }
 
+                // Reservar espacio para badge
+                int badgeWidth = SidebarTheme.GetBadgeWidth(g, Badge);
+                int badgeReserve = badgeWidth > 0 ? badgeWidth + 8 : 8;
+
                 using (var b = new SolidBrush(SidebarTheme.TextAccent))
                 {
                     var fmt = new StringFormat
@@ -697,8 +687,12 @@ namespace Procont.Utils.Sidebar
                         Trimming = StringTrimming.EllipsisCharacter
                     };
                     g.DrawString(Title.ToUpper(), SidebarTheme.FontGroupTitle, b,
-                        new RectangleF(textX, 0, Width - textX - 8, Height), fmt);
+                        new RectangleF(textX, 0, Width - textX - badgeReserve, Height), fmt);
                 }
+
+                // Badge pill
+                if (Badge != SidebarBadge.None)
+                    SidebarTheme.DrawBadge(g, Badge, Width - 8, Height / 2);
             }
         }
 
@@ -713,4 +707,5 @@ namespace Procont.Utils.Sidebar
             }
         }
     }
+
 }

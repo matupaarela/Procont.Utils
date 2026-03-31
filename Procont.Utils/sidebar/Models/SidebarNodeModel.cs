@@ -1,4 +1,5 @@
 ﻿using FontAwesome.Sharp;
+using Procont.Utils.sidebar.Models;
 using System;
 using System.ComponentModel;
 
@@ -22,5 +23,10 @@ namespace Procont.Utils.Sidebar.Models
         [Description("Ícono FontAwesome.Sharp (IconChar.*).")]
         [DefaultValue(IconChar.None)]
         public IconChar Icon { get; set; } = IconChar.None;
+
+        [Category("Sidebar")]
+        [Description("Insignia informativa: None, New (verde) o Beta (ámbar).")]
+        [DefaultValue(SidebarBadge.None)]
+        public SidebarBadge Badge { get; set; } = SidebarBadge.None;
     }
 }
