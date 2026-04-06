@@ -141,21 +141,27 @@ namespace Procont.Utils.Sidebar
 
             int baseX = 14 + (_level * 18);
 
-            // Líneas de jerarquía (solo niveles > 0)
-            for (int lvl = 1; lvl < _level; lvl++)
-            {
-                int lx = 14 + (lvl * 18) - 11;
-                using (var pen = new Pen(SidebarTheme.BorderColor, 1))
-                    g.DrawLine(pen, lx, 0, lx, Height);
-            }
-
-            // Guión horizontal
             if (_level > 0)
             {
-                int lx = 14 + ((_level - 1) * 18) + 7;
+                int connectorX = 14 + ((_level - 1) * 18) + 7;
+
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
-                    g.DrawLine(pen, lx, Height / 2, baseX - 2, Height / 2);
+                {
+                    // Líneas verticales de los niveles ancestro
+                    for (int lvl = 1; lvl < _level; lvl++)
+                    {
+                        int lx = 14 + (lvl * 18) - 11;
+                        g.DrawLine(pen, lx, 0, lx, Height);
+                    }
+
+                    // Línea vertical del nivel actual (igual que GroupHeader.PaintLevelN)
+                    g.DrawLine(pen, connectorX, 0, connectorX, Height);
+
+                    // Guión horizontal conector
+                    g.DrawLine(pen, connectorX, Height / 2, baseX, Height / 2);
+                }
             }
+
 
             // Ícono
             if (_iconChar != IconChar.None)
