@@ -1,11 +1,12 @@
 ﻿using FontAwesome.Sharp;
-using Procont.Utils.Sidebar.Models;
+using Procont.Utils.Components.Sidebar.Models;
+using Procont.Utils.Sidebar;
 using System;
 using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Procont.Utils.Sidebar
+namespace Procont.Utils.Components.Sidebar
 {
     /// <summary>
     /// Ítem hoja del sidebar.

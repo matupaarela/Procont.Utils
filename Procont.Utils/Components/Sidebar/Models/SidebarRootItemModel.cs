@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     /// <summary>
     /// Ítem raíz del sidebar (nivel 0, sin hijos).

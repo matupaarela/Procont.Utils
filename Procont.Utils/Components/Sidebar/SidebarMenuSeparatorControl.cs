@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+﻿using Procont.Utils.Sidebar;
+using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
-namespace Procont.Utils.Sidebar
+namespace Procont.Utils.Components.Sidebar
 {
     [ToolboxItem(false)]
     [DesignTimeVisible(false)]

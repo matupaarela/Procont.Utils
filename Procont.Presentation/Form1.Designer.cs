@@ -28,34 +28,34 @@
         /// </summary>
         private void InitializeComponent()
         {
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel1 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel1 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel2 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel1 = new Procont.Utils.Sidebar.Models.SidebarSeparatorModel();
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel2 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel3 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel4 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel5 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel6 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel3 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel7 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel8 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel4 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel9 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel10 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel5 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel6 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel11 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel12 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel13 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel14 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Sidebar.Models.SidebarSeparatorModel();
-            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
-            Procont.Utils.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Sidebar.Models.SidebarRootItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel3 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel4 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel5 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel6 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel3 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel7 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel8 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel4 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel9 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel10 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel5 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel6 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel11 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel12 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel13 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel14 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel();
             this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
-            this.sidebarControl1 = new Procont.Utils.Sidebar.SidebarControl();
+            this.sidebarControl1 = new Procont.Utils.Components.Sidebar.SidebarControl();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
             this.SuspendLayout();
@@ -115,7 +115,7 @@
             sidebarGroupModel3.Children.Add(sidebarItemModel8);
             sidebarGroupModel3.Children.Add(sidebarGroupModel4);
             sidebarGroupModel3.Icon = FontAwesome.Sharp.IconChar.Question;
-            sidebarGroupModel5.Badge = Procont.Utils.Sidebar.Models.SidebarBadge.New;
+            sidebarGroupModel5.Badge = Procont.Utils.Components.Sidebar.Models.SidebarBadge.New;
             sidebarItemModel11.ItemText = "Nuevo ítem Clicable";
             sidebarItemModel11.Key = "Clicable";
             sidebarItemModel12.ItemText = "Nuevo ítem";
@@ -133,7 +133,7 @@
             sidebarGroupModel5.Children.Add(sidebarSeparatorModel2);
             sidebarGroupModel5.Children.Add(sidebarItemModel15);
             sidebarGroupModel5.GroupTitle = "COMPRAS";
-            sidebarRootItemModel1.Badge = Procont.Utils.Sidebar.Models.SidebarBadge.Beta;
+            sidebarRootItemModel1.Badge = Procont.Utils.Components.Sidebar.Models.SidebarBadge.Beta;
             sidebarRootItemModel1.Icon = FontAwesome.Sharp.IconChar.Hourglass1;
             sidebarRootItemModel1.ItemText = "FINANCIERO";
             this.sidebarControl1.Groups.Add(sidebarGroupModel1);
@@ -147,7 +147,7 @@
             this.sidebarControl1.ShowDashboard = false;
             this.sidebarControl1.Size = new System.Drawing.Size(260, 566);
             this.sidebarControl1.TabIndex = 0;
-            this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
+            this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Components.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
             // 
             // Form1
             // 
@@ -170,7 +170,7 @@
 
         #endregion
 
-        private Utils.Sidebar.SidebarControl sidebarControl1;
+        private Utils.Components.Sidebar.SidebarControl sidebarControl1;
         private FontAwesome.Sharp.IconPictureBox iconPictureBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button button1;

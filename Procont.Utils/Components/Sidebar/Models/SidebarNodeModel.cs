@@ -1,7 +1,7 @@
 ﻿using FontAwesome.Sharp;
 using System.ComponentModel;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     /// <summary>
     /// Clase base para SidebarItemModel y SidebarGroupModel.

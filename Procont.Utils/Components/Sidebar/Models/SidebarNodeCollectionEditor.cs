@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.Design;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     /// <summary>
     /// CollectionEditor personalizado para List&lt;SidebarNodeModel&gt;.

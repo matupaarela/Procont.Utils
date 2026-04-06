@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     /// <summary>
     /// Insignia informativa que se dibuja en el extremo derecho de un

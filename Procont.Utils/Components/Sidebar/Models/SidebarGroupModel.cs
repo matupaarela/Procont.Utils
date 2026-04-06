@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.Drawing.Design;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     /// <summary>
     /// Modelo de un grupo colapsable del sidebar.

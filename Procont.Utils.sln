@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procont.Utils", "Procont.Ut
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procont.Presentation", "Procont.Presentation\Procont.Presentation.csproj", "{B377B855-DC66-4DBC-9631-BC678E178674}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Procont.DevSandbox", "Procont.DevSandbox\Procont.DevSandbox.csproj", "{A9F10131-1475-46FB-9202-560B162419C6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{B377B855-DC66-4DBC-9631-BC678E178674}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B377B855-DC66-4DBC-9631-BC678E178674}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B377B855-DC66-4DBC-9631-BC678E178674}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9F10131-1475-46FB-9202-560B162419C6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9F10131-1475-46FB-9202-560B162419C6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9F10131-1475-46FB-9202-560B162419C6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9F10131-1475-46FB-9202-560B162419C6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Procont.Utils.Sidebar.Models
+namespace Procont.Utils.Components.Sidebar.Models
 {
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class SidebarSeparatorModel : SidebarNodeModel
