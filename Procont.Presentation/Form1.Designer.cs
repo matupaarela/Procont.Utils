@@ -31,6 +31,7 @@
             Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel1 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel1 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel2 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel1 = new Procont.Utils.Sidebar.Models.SidebarSeparatorModel();
             Procont.Utils.Sidebar.Models.SidebarGroupModel sidebarGroupModel2 = new Procont.Utils.Sidebar.Models.SidebarGroupModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel3 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel4 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
@@ -48,6 +49,8 @@
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel12 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel13 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel14 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
+            Procont.Utils.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Sidebar.Models.SidebarSeparatorModel();
+            Procont.Utils.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Sidebar.Models.SidebarRootItemModel();
             this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -92,14 +95,19 @@
             // sidebarControl1
             // 
             this.sidebarControl1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(39)))), ((int)(((byte)(59)))));
+            this.sidebarControl1.CompanySubtitle = "BUSINESS ACCOMPANYING S.A.C.";
             this.sidebarControl1.Dock = System.Windows.Forms.DockStyle.Left;
+            sidebarSeparatorModel1.Label = "Otros";
             sidebarGroupModel2.Children.Add(sidebarItemModel3);
             sidebarGroupModel2.Children.Add(sidebarItemModel4);
             sidebarGroupModel2.Children.Add(sidebarItemModel5);
             sidebarGroupModel2.Children.Add(sidebarItemModel6);
+            sidebarGroupModel2.Expanded = true;
             sidebarGroupModel1.Children.Add(sidebarItemModel1);
             sidebarGroupModel1.Children.Add(sidebarItemModel2);
+            sidebarGroupModel1.Children.Add(sidebarSeparatorModel1);
             sidebarGroupModel1.Children.Add(sidebarGroupModel2);
+            sidebarGroupModel1.Expanded = true;
             sidebarGroupModel1.Icon = FontAwesome.Sharp.IconChar.DollarSign;
             sidebarGroupModel4.Children.Add(sidebarItemModel9);
             sidebarGroupModel4.Children.Add(sidebarItemModel10);
@@ -107,7 +115,7 @@
             sidebarGroupModel3.Children.Add(sidebarItemModel8);
             sidebarGroupModel3.Children.Add(sidebarGroupModel4);
             sidebarGroupModel3.Icon = FontAwesome.Sharp.IconChar.Question;
-            sidebarGroupModel5.Badge = Procont.Utils.sidebar.Models.SidebarBadge.New;
+            sidebarGroupModel5.Badge = Procont.Utils.Sidebar.Models.SidebarBadge.New;
             sidebarItemModel11.ItemText = "Nuevo ítem Clicable";
             sidebarItemModel11.Key = "Clicable";
             sidebarItemModel12.ItemText = "Nuevo ítem";
@@ -118,10 +126,14 @@
             sidebarGroupModel6.Children.Add(sidebarItemModel13);
             sidebarGroupModel6.GroupTitle = "Nuevo grupo";
             sidebarItemModel14.ItemText = "Nuevo ítem";
+            sidebarSeparatorModel2.Label = "Nueva sección";
+            sidebarItemModel15.ItemText = "Nuevo ítem";
             sidebarGroupModel5.Children.Add(sidebarGroupModel6);
             sidebarGroupModel5.Children.Add(sidebarItemModel14);
+            sidebarGroupModel5.Children.Add(sidebarSeparatorModel2);
+            sidebarGroupModel5.Children.Add(sidebarItemModel15);
             sidebarGroupModel5.GroupTitle = "COMPRAS";
-            sidebarRootItemModel1.Badge = Procont.Utils.sidebar.Models.SidebarBadge.Beta;
+            sidebarRootItemModel1.Badge = Procont.Utils.Sidebar.Models.SidebarBadge.Beta;
             sidebarRootItemModel1.Icon = FontAwesome.Sharp.IconChar.Hourglass1;
             sidebarRootItemModel1.ItemText = "FINANCIERO";
             this.sidebarControl1.Groups.Add(sidebarGroupModel1);
@@ -129,7 +141,10 @@
             this.sidebarControl1.Groups.Add(sidebarGroupModel5);
             this.sidebarControl1.Groups.Add(sidebarRootItemModel1);
             this.sidebarControl1.Location = new System.Drawing.Point(0, 0);
+            this.sidebarControl1.Module = "Juancho";
             this.sidebarControl1.Name = "sidebarControl1";
+            this.sidebarControl1.Ruc = "20602111602";
+            this.sidebarControl1.ShowDashboard = false;
             this.sidebarControl1.Size = new System.Drawing.Size(260, 566);
             this.sidebarControl1.TabIndex = 0;
             this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);

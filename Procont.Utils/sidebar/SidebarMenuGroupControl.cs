@@ -1,5 +1,5 @@
 ﻿using FontAwesome.Sharp;
-using Procont.Utils.sidebar.Models;
+using Procont.Utils.Sidebar.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -123,6 +123,19 @@ namespace Procont.Utils.Sidebar
         }
 
         // ── API pública ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Agrega un ítem separador (línea con texto opcional) a este grupo.
+        /// </summary>
+        /// <param name="label"></param>
+        /// <returns></returns>
+        public SidebarMenuSeparatorControl AddSeparator(string label = "")
+        {
+            var sep = new SidebarMenuSeparatorControl(label);
+            _children.Add(sep);
+            RebuildChildrenPanel();
+            return sep;
+        }
 
         /// <summary>
         /// Agrega un ítem hoja a este grupo.

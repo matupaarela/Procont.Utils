@@ -60,6 +60,7 @@
     <Compile Include="sidebar\Models\SidebarNodeModel.cs" />
     <Compile Include="sidebar\Models\SidebarRootCollectionEditor.cs" />
     <Compile Include="sidebar\Models\SidebarRootItemModel.cs" />
+    <Compile Include="sidebar\Models\SidebarSeparatorModel.cs" />
     <Compile Include="sidebar\SidebarControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -70,6 +71,9 @@
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="sidebar\SidebarMenuItemControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="sidebar\SidebarMenuSeparatorControl.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="sidebar\SidebarTheme.cs" />

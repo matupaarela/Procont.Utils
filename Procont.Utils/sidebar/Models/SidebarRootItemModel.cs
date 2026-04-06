@@ -1,5 +1,4 @@
-﻿using FontAwesome.Sharp;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace Procont.Utils.Sidebar.Models
 {

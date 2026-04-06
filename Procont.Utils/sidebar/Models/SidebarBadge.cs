@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 
-namespace Procont.Utils.sidebar.Models
+namespace Procont.Utils.Sidebar.Models
 {
     /// <summary>
     /// Insignia informativa que se dibuja en el extremo derecho de un

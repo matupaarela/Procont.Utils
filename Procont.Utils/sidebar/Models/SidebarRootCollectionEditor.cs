@@ -21,7 +21,8 @@ namespace Procont.Utils.Sidebar.Models
         protected override Type[] CreateNewItemTypes() => new[]
         {
             typeof(SidebarRootItemModel),
-            typeof(SidebarGroupModel)
+            typeof(SidebarGroupModel),
+            typeof(SidebarSeparatorModel)
         };
 
         protected override object CreateInstance(Type itemType)
@@ -44,6 +45,8 @@ namespace Procont.Utils.Sidebar.Models
             if (value == null) return "(nulo)";
             if (value is SidebarRootItemModel root) return $"▶  {root.ItemText}";
             if (value is SidebarGroupModel grp) return $"📁  {grp.GroupTitle}";
+            if (value is SidebarSeparatorModel sep)
+                return string.IsNullOrEmpty(sep.Label) ? "─────────────" : $"─── {sep.Label} ───";
             return base.GetDisplayText(value);
         }
 

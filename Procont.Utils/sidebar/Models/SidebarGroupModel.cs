@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Drawing.Design;
-using FontAwesome.Sharp;
 
 namespace Procont.Utils.Sidebar.Models
 {

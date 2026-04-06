@@ -1,5 +1,5 @@
 ﻿using FontAwesome.Sharp;
-using Procont.Utils.sidebar.Models;
+using Procont.Utils.Sidebar.Models;
 using System;
 using System.ComponentModel;
 using System.Drawing;

@@ -1,5 +1,4 @@
 ﻿using FontAwesome.Sharp;
-using Procont.Utils.sidebar.Models;
 using Procont.Utils.Sidebar.Models;
 using System;
 using System.Collections.Generic;
@@ -252,6 +251,11 @@ namespace Procont.Utils.Sidebar
                     _nodeControls.Add(ctrl);
                     _groupControls.Add(ctrl);
                 }
+                else if (node is SidebarSeparatorModel setModel)
+                {
+                    var ctrl = new SidebarMenuSeparatorControl(setModel.Label);
+                    _nodeControls.Add(ctrl);
+                }
             }
 
             RebuildMenuContainer();
@@ -313,6 +317,10 @@ namespace Procont.Utils.Sidebar
                     var subCtrl = BuildGroupControl(subModel, indentLevel + 1, myTitles, myIcons);
                     if (subCtrl != null)
                         ctrl.AddSubGroupControl(subCtrl);
+                }
+                else if (node is SidebarSeparatorModel sepModel)
+                {
+                    ctrl.AddSeparator(sepModel.Label);
                 }
             }
 
