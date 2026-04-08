@@ -52,10 +52,17 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Components\ComboSearch\ComboSearchBox.cs" />
-    <Compile Include="Components\ComboSearch\ComboSearchDropdown.cs" />
-    <Compile Include="Components\ComboSearch\ComboSearchItemControl.cs" />
+    <Compile Include="Components\ComboSearch\ComboSearchBox.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\ComboSearch\ComboSearchDropdown.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\ComboSearch\ComboSearchItemControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Components\ComboSearch\ComboSearchTheme.cs" />
+    <Compile Include="Components\ComboSearch\ComboSelectionEventArgs.cs" />
     <Compile Include="Components\ComboSearch\Models\ComboSearchItem.cs" />
     <Compile Include="Core\Extensions\GraphicsExtensions.cs" />
     <Compile Include="Core\Models\BindableItem.cs" />
