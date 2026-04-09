@@ -7,35 +7,26 @@ using System.ComponentModel;
 using System.Drawing;
 using System.Windows.Forms;
 
-
 namespace Procont.Utils.Components.Sidebar
 {
-    /// <summary>
-    /// Grupo colapsable del sidebar con soporte recursivo de N niveles.
-    /// - Key      : identificador lógico único.
-    /// - GroupIcon: ícono FontAwesome.Sharp (IconChar.*).
-    /// - Badge    : insignia informativa (None / New / Beta).
-    /// </summary>
     [ToolboxItem(false)]
     [DesignTimeVisible(false)]
     public class SidebarMenuGroupControl : Panel
     {
-        // ── Controles internos ────────────────────────────────────────
         private readonly GroupHeader _header;
         private readonly Panel _childrenPanel;
 
-        // ── Estado ────────────────────────────────────────────────────
         private bool _expanded = false;
         private SidebarBadge _badge = SidebarBadge.None;
         private readonly int _indentLevel;
         private readonly List<Control> _children = new List<Control>();
 
-        // ── Eventos ───────────────────────────────────────────────────
         public event EventHandler<SidebarMenuItemControl> ItemSelected;
         internal event EventHandler LayoutChanged;
         internal event EventHandler GroupExpanded;
 
-        // ── Propiedades ───────────────────────────────────────────────
+        // ← NUEVO: notifica al padre cuando un ítem hijo entra/sale de hover
+        internal event Action<bool> ChildHoverChanged;
 
         [Category("Sidebar")]
         [Description("Texto del encabezado del grupo.")]
@@ -70,24 +61,17 @@ namespace Procont.Utils.Components.Sidebar
         }
 
         [Category("Sidebar")]
-        [Description("Insignia informativa que se muestra en el encabezado: None, New (verde) o Beta (ámbar).")]
+        [Description("Insignia informativa: None, New (verde) o Beta (ámbar).")]
         [DefaultValue(SidebarBadge.None)]
         public SidebarBadge Badge
         {
             get => _badge;
-            set
-            {
-                _badge = value;
-                _header.Badge = value;
-                _header.Invalidate();
-            }
+            set { _badge = value; _header.Badge = value; _header.Invalidate(); }
         }
 
-        // ── Ocultar propiedades heredadas irrelevantes ─────────────────
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public new Padding Padding { get => base.Padding; set => base.Padding = value; }
 
-        // ── Constructores ─────────────────────────────────────────────
         public SidebarMenuGroupControl() : this(0) { }
 
         public SidebarMenuGroupControl(int indentLevel)
@@ -123,13 +107,6 @@ namespace Procont.Utils.Components.Sidebar
             UpdateLayout();
         }
 
-        // ── API pública ────────────────────────────────────────────────
-
-        /// <summary>
-        /// Agrega un ítem separador (línea con texto opcional) a este grupo.
-        /// </summary>
-        /// <param name="label"></param>
-        /// <returns></returns>
         public SidebarMenuSeparatorControl AddSeparator(string label = "")
         {
             var sep = new SidebarMenuSeparatorControl(label);
@@ -138,9 +115,6 @@ namespace Procont.Utils.Components.Sidebar
             return sep;
         }
 
-        /// <summary>
-        /// Agrega un ítem hoja a este grupo.
-        /// </summary>
         public SidebarMenuItemControl AddItem(
             string text,
             string key = "",
@@ -154,14 +128,26 @@ namespace Procont.Utils.Components.Sidebar
             };
             item.Height = GetItemHeight();
             item.ItemSelected += (s, e) => ItemSelected?.Invoke(this, item);
+
+            // ← Propagar hover del ítem al header de este grupo
+            item.MouseEnter += (s, e) =>
+            {
+                _header.HasHoveredChild = true;
+                _header.Invalidate();
+                ChildHoverChanged?.Invoke(true);
+            };
+            item.MouseLeave += (s, e) =>
+            {
+                _header.HasHoveredChild = false;
+                _header.Invalidate();
+                ChildHoverChanged?.Invoke(false);
+            };
+
             _children.Add(item);
             RebuildChildrenPanel();
             return item;
         }
 
-        /// <summary>
-        /// Agrega un sub-grupo ya construido (usado internamente por SidebarControl).
-        /// </summary>
         internal void AddSubGroupControl(SidebarMenuGroupControl sub)
         {
             sub.ItemSelected += (s, item) => ItemSelected?.Invoke(this, item);
@@ -170,13 +156,18 @@ namespace Procont.Utils.Components.Sidebar
                 UpdateLayout();
                 LayoutChanged?.Invoke(this, EventArgs.Empty);
             };
+
+            // ← Propagar hover de ítems del sub-grupo al header de este grupo
+            sub.ChildHoverChanged += hovered =>
+            {
+                _header.HasHoveredChild = hovered;
+                _header.Invalidate();
+            };
+
             _children.Add(sub);
             RebuildChildrenPanel();
         }
 
-        /// <summary>
-        /// Agrega un sub-grupo anidado.
-        /// </summary>
         public SidebarMenuGroupControl AddSubGroup(
             string title,
             string key = "",
@@ -194,14 +185,18 @@ namespace Procont.Utils.Components.Sidebar
             };
             sub.ItemSelected += (s, item) => ItemSelected?.Invoke(this, item);
             sub.LayoutChanged += (s, e) => UpdateLayout();
+
+            // ← Propagar hover
+            sub.ChildHoverChanged += hovered =>
+            {
+                _header.HasHoveredChild = hovered;
+                _header.Invalidate();
+            };
+
             _children.Add(sub);
             RebuildChildrenPanel();
             return sub;
         }
-
-        // ══════════════════════════════════════════════════════════════
-        // VISIBILIDAD POR KEY
-        // ══════════════════════════════════════════════════════════════
 
         internal int GetNaturalHeight()
         {
@@ -264,10 +259,6 @@ namespace Procont.Utils.Components.Sidebar
             recalculate?.Invoke();
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // SELECCIÓN PROGRAMÁTICA
-        // ══════════════════════════════════════════════════════════════
-
         internal bool TrySelectItem(string key, out SidebarMenuItemControl found)
         {
             foreach (var child in _children)
@@ -309,7 +300,6 @@ namespace Procont.Utils.Components.Sidebar
             UpdateLayout();
         }
 
-        // ── Toggle ────────────────────────────────────────────────────
         public void Toggle()
         {
             _expanded = !_expanded;
@@ -320,7 +310,6 @@ namespace Procont.Utils.Components.Sidebar
                 GroupExpanded?.Invoke(this, EventArgs.Empty);
         }
 
-        // ── Layout ────────────────────────────────────────────────────
         private void UpdateLayout()
         {
             _header.IsExpanded = _expanded;
@@ -370,6 +359,9 @@ namespace Procont.Utils.Components.Sidebar
             public bool IsExpanded = false;
             public SidebarBadge Badge = SidebarBadge.None;
 
+            // ← NUEVO: true cuando algún ítem hijo está en hover
+            public bool HasHoveredChild = false;
+
             private bool _hovered = false;
             private readonly int _level;
 
@@ -393,9 +385,11 @@ namespace Procont.Utils.Components.Sidebar
             {
                 var g = e.Graphics;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-                g.Clear(IsExpanded ? SidebarTheme.BackgroundActive :
-                        _hovered ? SidebarTheme.BackgroundHover :
-                                     SidebarTheme.BackgroundDark);
+
+                // ← Sin estado "active" en headers; solo hover (directo o desde hijo)
+                g.Clear(_hovered || HasHoveredChild
+                    ? SidebarTheme.BackgroundHover
+                    : SidebarTheme.BackgroundDark);
 
                 if (_level == 0) PaintLevel0(g);
                 else PaintLevelN(g);
@@ -403,7 +397,6 @@ namespace Procont.Utils.Components.Sidebar
 
             private void PaintLevel0(Graphics g)
             {
-                // Ícono
                 if (Icon != IconChar.None)
                 {
                     int iconSize = 16, iconY = (Height - iconSize) / 2;
@@ -411,11 +404,9 @@ namespace Procont.Utils.Components.Sidebar
                         g.DrawImage(bmp, 12, iconY, iconSize, iconSize);
                 }
 
-                // Espacio reservado: chevron (22px) + badge (si hay) + separación
                 int badgeWidth = SidebarTheme.GetBadgeWidth(g, Badge);
                 int rightReserve = 22 + (badgeWidth > 0 ? badgeWidth + 6 : 0);
 
-                // Texto
                 using (var b = new SolidBrush(SidebarTheme.TextAccent))
                 {
                     var fmt = new StringFormat
@@ -429,11 +420,9 @@ namespace Procont.Utils.Components.Sidebar
                         new RectangleF(tx, 0, Width - tx - rightReserve, Height), fmt);
                 }
 
-                // Badge — entre texto y chevron
                 if (Badge != SidebarBadge.None)
                     SidebarTheme.DrawBadge(g, Badge, Width - 22, Height / 2);
 
-                // Chevron
                 DrawChevron(g, IsExpanded, SidebarTheme.TextSubdued, large: true);
             }
 
@@ -441,7 +430,6 @@ namespace Procont.Utils.Components.Sidebar
             {
                 int baseX = 14 + (_level * 18);
 
-                // Líneas de jerarquía
                 using (var pen = new Pen(SidebarTheme.BorderColor, 1))
                 {
                     int lineX = 14 + ((_level - 1) * 18) + 7;
@@ -449,21 +437,20 @@ namespace Procont.Utils.Components.Sidebar
                     g.DrawLine(pen, lineX, Height / 2, baseX, Height / 2);
                 }
 
-                // Ícono
                 if (Icon != IconChar.None)
                 {
                     int iconSize = 13, iconY = (Height - iconSize) / 2;
+                    // ← Color del ícono: accent si expandido, subdued si no
                     using (var bmp = Icon.ToBitmap(
                         IsExpanded ? SidebarTheme.TextAccent : SidebarTheme.TextSubdued, iconSize))
                         g.DrawImage(bmp, baseX - 2, iconY, iconSize, iconSize);
                 }
 
-                // Espacio reservado: chevron (22px) + badge (si hay)
                 int badgeWidth = SidebarTheme.GetBadgeWidth(g, Badge);
                 int rightReserve = 22 + (badgeWidth > 0 ? badgeWidth + 6 : 0);
 
-                // Texto
-                Color tc = IsExpanded ? SidebarTheme.TextPrimary : Color.FromArgb(190, 200, 215);
+                // ← Texto: accent si expandido (sin cambiar fondo), subdued si no
+                Color tc = IsExpanded ? SidebarTheme.TextAccent : Color.FromArgb(190, 200, 215);
                 using (var b = new SolidBrush(tc))
                 {
                     int tx = baseX + (Icon != IconChar.None ? 16 : 0);
@@ -477,11 +464,9 @@ namespace Procont.Utils.Components.Sidebar
                         new RectangleF(tx, 0, Width - tx - rightReserve, Height), fmt);
                 }
 
-                // Badge — entre texto y chevron
                 if (Badge != SidebarBadge.None)
                     SidebarTheme.DrawBadge(g, Badge, Width - 22, Height / 2);
 
-                // Chevron
                 DrawChevron(g, IsExpanded, SidebarTheme.TextSubdued, large: false);
             }
 
