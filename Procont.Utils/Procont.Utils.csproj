@@ -61,9 +61,13 @@
     <Compile Include="Components\ComboSearch\ComboSearchItemControl.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Components\ComboSearch\ComboSearchRenderer.cs" />
     <Compile Include="Components\ComboSearch\ComboSearchTheme.cs" />
     <Compile Include="Components\ComboSearch\ComboSelectionEventArgs.cs" />
     <Compile Include="Components\ComboSearch\Models\ComboSearchItem.cs" />
+    <Compile Include="Components\ComboSearch\VirtualItemsPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Core\Extensions\GraphicsExtensions.cs" />
     <Compile Include="Core\Models\BindableItem.cs" />
     <Compile Include="Core\Theming\IThemeable.cs" />
