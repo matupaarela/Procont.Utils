@@ -68,6 +68,21 @@
     <Compile Include="Components\ComboSearch\VirtualItemsPanel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Components\DataGrid\DataGridColumnGroup.cs" />
+    <Compile Include="Components\DataGrid\DataGridFooterBar.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\DataGrid\ProcontDataGridView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\DataItem\DataItemControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\DataItem\DataItemView.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Components\DataItem\Models\DataItemEnums.cs" />
+    <Compile Include="Components\DataItem\Models\DataItemModel.cs" />
     <Compile Include="Core\Extensions\GraphicsExtensions.cs" />
     <Compile Include="Core\Models\BindableItem.cs" />
     <Compile Include="Core\Theming\IThemeable.cs" />
@@ -101,6 +116,8 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Components\DataGrid\Models\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
