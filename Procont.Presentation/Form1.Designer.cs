@@ -52,17 +52,25 @@
             Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel();
             Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel1 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel2 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel3 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel4 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel5 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
             this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.TbResultTest = new System.Windows.Forms.TextBox();
             this.CboTest = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
-            this.sidebarControl1 = new Procont.Utils.Components.Sidebar.SidebarControl();
             this.comboSearchBox1 = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
+            this.sidebarControl1 = new Procont.Utils.Components.Sidebar.SidebarControl();
+            this.dataItemView1 = new Procont.Utils.Components.DataItem.DataItemView();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).BeginInit();
             this.SuspendLayout();
             // 
             // iconPictureBox1
@@ -72,7 +80,7 @@
             this.iconPictureBox1.IconChar = FontAwesome.Sharp.IconChar.None;
             this.iconPictureBox1.IconColor = System.Drawing.SystemColors.ControlText;
             this.iconPictureBox1.IconFont = FontAwesome.Sharp.IconFont.Auto;
-            this.iconPictureBox1.Location = new System.Drawing.Point(374, 32);
+            this.iconPictureBox1.Location = new System.Drawing.Point(266, 12);
             this.iconPictureBox1.Name = "iconPictureBox1";
             this.iconPictureBox1.Size = new System.Drawing.Size(32, 32);
             this.iconPictureBox1.TabIndex = 1;
@@ -81,7 +89,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(371, 76);
+            this.label1.Location = new System.Drawing.Point(304, 21);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(35, 13);
             this.label1.TabIndex = 2;
@@ -102,19 +110,19 @@
             this.groupBox1.Controls.Add(this.TbResultTest);
             this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.CboTest);
-            this.groupBox1.Location = new System.Drawing.Point(383, 271);
+            this.groupBox1.Location = new System.Drawing.Point(281, 393);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(402, 225);
+            this.groupBox1.Size = new System.Drawing.Size(301, 161);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "groupBox1";
             // 
             // TbResultTest
             // 
-            this.TbResultTest.Location = new System.Drawing.Point(11, 71);
+            this.TbResultTest.Location = new System.Drawing.Point(11, 48);
             this.TbResultTest.Multiline = true;
             this.TbResultTest.Name = "TbResultTest";
-            this.TbResultTest.Size = new System.Drawing.Size(375, 137);
+            this.TbResultTest.Size = new System.Drawing.Size(276, 107);
             this.TbResultTest.TabIndex = 5;
             // 
             // CboTest
@@ -123,12 +131,23 @@
             this.CboTest.Cursor = System.Windows.Forms.Cursors.Hand;
             this.CboTest.EmptyStateText = "No hay ítems. Podés agregarlo desde el botón {action}.";
             this.CboTest.Location = new System.Drawing.Point(6, 19);
+            this.CboTest.MaxDropdownItems = 5;
             this.CboTest.MultiSelect = true;
             this.CboTest.Name = "CboTest";
             this.CboTest.Size = new System.Drawing.Size(200, 23);
             this.CboTest.TabIndex = 4;
             this.CboTest.Text = "comboSearchBox1";
             this.CboTest.MultiSelectionChanged += new System.EventHandler<Procont.Utils.Components.ComboSearch.MultiSelectionChangedEventArgs>(this.CboTest_MultiSelectionChanged);
+            // 
+            // comboSearchBox1
+            // 
+            this.comboSearchBox1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.comboSearchBox1.EmptyStateText = "No hay ítems. Puedes agregarlo desde el botón {action}.";
+            this.comboSearchBox1.Location = new System.Drawing.Point(266, 50);
+            this.comboSearchBox1.Name = "comboSearchBox1";
+            this.comboSearchBox1.Size = new System.Drawing.Size(200, 23);
+            this.comboSearchBox1.TabIndex = 6;
+            this.comboSearchBox1.Text = "comboSearchBox1";
             // 
             // sidebarControl1
             // 
@@ -187,15 +206,31 @@
             this.sidebarControl1.TabIndex = 0;
             this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Components.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
             // 
-            // comboSearchBox1
+            // dataItemView1
             // 
-            this.comboSearchBox1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.comboSearchBox1.EmptyStateText = "No hay ítems. Puedes agregarlo desde el botón {action}.";
-            this.comboSearchBox1.Location = new System.Drawing.Point(595, 142);
-            this.comboSearchBox1.Name = "comboSearchBox1";
-            this.comboSearchBox1.Size = new System.Drawing.Size(200, 23);
-            this.comboSearchBox1.TabIndex = 6;
-            this.comboSearchBox1.Text = "comboSearchBox1";
+            this.dataItemView1.AutoScroll = true;
+            this.dataItemView1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(39)))), ((int)(((byte)(59)))));
+            dataItemModel1.ActionLabel = "Agregar";
+            dataItemModel1.Badge = Procont.Utils.Components.Sidebar.Models.SidebarBadge.New;
+            dataItemModel1.Description = "describiendo";
+            dataItemModel1.Variant = Procont.Utils.Components.DataItem.Models.DataItemVariant.Outline;
+            this.dataItemView1.Items.Add(dataItemModel1);
+            this.dataItemView1.Items.Add(dataItemModel2);
+            this.dataItemView1.Items.Add(dataItemModel3);
+            this.dataItemView1.Items.Add(dataItemModel4);
+            this.dataItemView1.Items.Add(dataItemModel5);
+            this.dataItemView1.Location = new System.Drawing.Point(588, 377);
+            this.dataItemView1.Name = "dataItemView1";
+            this.dataItemView1.Size = new System.Drawing.Size(341, 177);
+            this.dataItemView1.TabIndex = 8;
+            this.dataItemView1.Text = "dataItemView1";
+            // 
+            // flowLayoutPanel1
+            // 
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(273, 95);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(548, 248);
+            this.flowLayoutPanel1.TabIndex = 9;
             // 
             // Form1
             // 
@@ -203,6 +238,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(941, 566);
+            this.Controls.Add(this.flowLayoutPanel1);
+            this.Controls.Add(this.dataItemView1);
             this.Controls.Add(this.comboSearchBox1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label1);
@@ -215,6 +252,7 @@
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -230,5 +268,7 @@
         private Utils.Components.ComboSearch.ComboSearchBox CboTest;
         private System.Windows.Forms.TextBox TbResultTest;
         private Utils.Components.ComboSearch.ComboSearchBox comboSearchBox1;
+        private Utils.Components.DataItem.DataItemView dataItemView1;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
     }
 }

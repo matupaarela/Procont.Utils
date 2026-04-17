@@ -1,7 +1,9 @@
 ﻿using FontAwesome.Sharp;
+using Procont.Utils.Components.DataGrid;
 using Procont.Utils.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace Procont.Presentation
@@ -42,6 +44,36 @@ namespace Procont.Presentation
                 new BindableItem("Jupiter Holdings",  10, IconChar.Star),
                 new BindableItem("Kappa Group",       11, IconChar.Users),
             };
+
+            var procontDataGridView1 = new ProcontDataGridView
+            {
+                AutoGenerateColumns = false,
+            };
+
+            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column1", HeaderText = "Enero" });
+            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column2", HeaderText = "Febrero" });
+            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column3", HeaderText = "Marzo" });
+
+            procontDataGridView1.ColumnGroups.Add(new DataGridColumnGroup
+            {
+                Title = "Periodo anual",
+                ColumnNames = { "Column1", "Column2", "Column3" },
+            });
+
+
+            var footer = procontDataGridView1.CreateFooterBar();
+            footer.Dock = DockStyle.Bottom;
+            flowLayoutPanel1.Controls.Add(footer);
+            flowLayoutPanel1.Controls.Add(procontDataGridView1);   // DGV must be added AFTER footer
+            
+            footer.Rows.Add(new DataGridFooterRow
+              { Cells =
+                  {
+                    new DataGridFooterCell { ColumnName = "Total", Formula = FooterFormula.Sum, Format = "N2" },
+                    new DataGridFooterCell { ColumnName = "Label", Text = "TOTAL", Alignment = ContentAlignment.MiddleLeft }
+                  }
+              });
+            footer.Rebuild();
         }
 
         private void button1_Click(object sender, EventArgs e)
