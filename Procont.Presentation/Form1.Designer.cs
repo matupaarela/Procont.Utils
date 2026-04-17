@@ -56,9 +56,10 @@
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
-            this.comboSearchBox2 = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
-            this.comboSearchBox1 = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
+            this.TbResultTest = new System.Windows.Forms.TextBox();
+            this.CboTest = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
             this.sidebarControl1 = new Procont.Utils.Components.Sidebar.SidebarControl();
+            this.comboSearchBox1 = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
@@ -88,7 +89,7 @@
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(224, 41);
+            this.button1.Location = new System.Drawing.Point(212, 19);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 3;
@@ -98,39 +99,36 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.TbResultTest);
             this.groupBox1.Controls.Add(this.button1);
-            this.groupBox1.Controls.Add(this.comboSearchBox1);
+            this.groupBox1.Controls.Add(this.CboTest);
             this.groupBox1.Location = new System.Drawing.Point(383, 271);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(402, 159);
+            this.groupBox1.Size = new System.Drawing.Size(402, 225);
             this.groupBox1.TabIndex = 5;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "groupBox1";
             // 
-            // comboSearchBox2
+            // TbResultTest
             // 
-            this.comboSearchBox2.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.comboSearchBox2.EmptyStateText = "No hay ítems. Puedes agregarlo desde el botón {action}.";
-            this.comboSearchBox2.Location = new System.Drawing.Point(630, 128);
-            this.comboSearchBox2.MaximumSize = new System.Drawing.Size(0, 25);
-            this.comboSearchBox2.MinimumSize = new System.Drawing.Size(80, 25);
-            this.comboSearchBox2.Name = "comboSearchBox2";
-            this.comboSearchBox2.Size = new System.Drawing.Size(217, 25);
-            this.comboSearchBox2.TabIndex = 6;
-            this.comboSearchBox2.Text = "comboSearchBox2";
+            this.TbResultTest.Location = new System.Drawing.Point(11, 71);
+            this.TbResultTest.Multiline = true;
+            this.TbResultTest.Name = "TbResultTest";
+            this.TbResultTest.Size = new System.Drawing.Size(375, 137);
+            this.TbResultTest.TabIndex = 5;
             // 
-            // comboSearchBox1
+            // CboTest
             // 
-            this.comboSearchBox1.ActionLabel = "Nuevo";
-            this.comboSearchBox1.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.comboSearchBox1.EmptyStateText = "No hay ítems. Podés agregarlo desde el botón {action}.";
-            this.comboSearchBox1.Location = new System.Drawing.Point(18, 41);
-            this.comboSearchBox1.MaximumSize = new System.Drawing.Size(0, 36);
-            this.comboSearchBox1.MinimumSize = new System.Drawing.Size(200, 25);
-            this.comboSearchBox1.Name = "comboSearchBox1";
-            this.comboSearchBox1.Size = new System.Drawing.Size(200, 25);
-            this.comboSearchBox1.TabIndex = 4;
-            this.comboSearchBox1.Text = "comboSearchBox1";
+            this.CboTest.ActionLabel = "Nuevo";
+            this.CboTest.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.CboTest.EmptyStateText = "No hay ítems. Podés agregarlo desde el botón {action}.";
+            this.CboTest.Location = new System.Drawing.Point(6, 19);
+            this.CboTest.MultiSelect = true;
+            this.CboTest.Name = "CboTest";
+            this.CboTest.Size = new System.Drawing.Size(200, 23);
+            this.CboTest.TabIndex = 4;
+            this.CboTest.Text = "comboSearchBox1";
+            this.CboTest.MultiSelectionChanged += new System.EventHandler<Procont.Utils.Components.ComboSearch.MultiSelectionChangedEventArgs>(this.CboTest_MultiSelectionChanged);
             // 
             // sidebarControl1
             // 
@@ -189,13 +187,23 @@
             this.sidebarControl1.TabIndex = 0;
             this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Components.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
             // 
+            // comboSearchBox1
+            // 
+            this.comboSearchBox1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.comboSearchBox1.EmptyStateText = "No hay ítems. Puedes agregarlo desde el botón {action}.";
+            this.comboSearchBox1.Location = new System.Drawing.Point(595, 142);
+            this.comboSearchBox1.Name = "comboSearchBox1";
+            this.comboSearchBox1.Size = new System.Drawing.Size(200, 23);
+            this.comboSearchBox1.TabIndex = 6;
+            this.comboSearchBox1.Text = "comboSearchBox1";
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(941, 566);
-            this.Controls.Add(this.comboSearchBox2);
+            this.Controls.Add(this.comboSearchBox1);
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.iconPictureBox1);
@@ -205,6 +213,7 @@
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).EndInit();
             this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -217,8 +226,9 @@
         private FontAwesome.Sharp.IconPictureBox iconPictureBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button button1;
-        private Utils.Components.ComboSearch.ComboSearchBox comboSearchBox1;
         private System.Windows.Forms.GroupBox groupBox1;
-        private Utils.Components.ComboSearch.ComboSearchBox comboSearchBox2;
+        private Utils.Components.ComboSearch.ComboSearchBox CboTest;
+        private System.Windows.Forms.TextBox TbResultTest;
+        private Utils.Components.ComboSearch.ComboSearchBox comboSearchBox1;
     }
 }

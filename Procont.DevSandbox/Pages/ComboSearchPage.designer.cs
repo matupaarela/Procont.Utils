@@ -87,7 +87,8 @@ namespace Procont.DevSandbox.Pages
                 ActionLabel = "Nuevo cliente",
                 ActionIcon = IconChar.UserPlus,
                 EmptyStateText = "No encontrado. Usá {action}",
-                Margin = new Padding(0, 36, 0, 0)
+                Margin = new Padding(0, 36, 0, 0),
+                MultiSelect = true
             };
 
             combo1.DataSource = new List<BindableItem>
