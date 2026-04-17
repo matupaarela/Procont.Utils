@@ -15,6 +15,17 @@ namespace Procont.Utils.Components.ComboSearch
     /// <summary>
     /// ComboBox custom con búsqueda incremental dentro del dropdown,
     /// binding Display/Value, estado vacío y botón de acción configurable.
+    /// Soporta selección simple y multi-selección con checkboxes.
+    ///
+    /// ── ALTURA FIJA ──────────────────────────────────────────────────
+    /// La altura siempre es exactamente <see cref="ComboSearchTheme.InputHeight"/>
+    /// (23 px). No se puede cambiar desde el diseñador ni por código,
+    /// igual que <see cref="ComboBox"/> nativo de WinForms.
+    ///
+    /// ── ANCHO ────────────────────────────────────────────────────────
+    /// El ancho es completamente libre. El valor asignado en el diseñador
+    /// se respeta en tiempo de ejecución. <see cref="DefaultSize"/>
+    /// devuelve 200 px como ancho inicial al arrastrar desde el Toolbox.
     ///
     /// ── USO MÍNIMO ────────────────────────────────────────────────────
     ///   comboSearch.DataSource    = listaClientes;
@@ -22,17 +33,16 @@ namespace Procont.Utils.Components.ComboSearch
     ///   comboSearch.ValueMember   = "Id";
     ///   comboSearch.SelectionCommitted += (s, e) => Console.WriteLine(e.Value);
     ///
-    /// ── CON BindableItem ─────────────────────────────────────────────
-    ///   comboSearch.DataSource = BindableItem.From(clientes, c => c.Nombre, c => c.Id);
-    ///   // DisplayMember y ValueMember se infieren automáticamente.
-    ///
-    /// ── BOTÓN DE ACCIÓN ──────────────────────────────────────────────
-    ///   comboSearch.ActionLabel = "+ Nuevo cliente";
-    ///   comboSearch.ActionIcon  = IconChar.UserPlus;
-    ///   comboSearch.ActionButtonClicked += (s, e) => AbrirFormulario(e.SearchText);
+    /// ── MULTI-SELECT ─────────────────────────────────────────────────
+    ///   comboSearch.MultiSelect = true;
+    ///   comboSearch.MultiSelectionChanged += (s, e) =>
+    ///   {
+    ///       var textos = e.SelectedDisplayTexts;   // IReadOnlyList<string>
+    ///       var valores = e.SelectedValues;         // IReadOnlyList<object>
+    ///   };
     /// </summary>
     [ToolboxItem(true)]
-    [Description("ComboBox con búsqueda en el dropdown, binding Display/Value y botón de acción.")]
+    [Description("ComboBox con búsqueda en el dropdown, selección simple o múltiple, y botón de acción.")]
     [DefaultEvent("SelectionCommitted")]
     [DefaultProperty("DataSource")]
     public class ComboSearchBox : Control, IThemeable
@@ -42,9 +52,10 @@ namespace Procont.Utils.Components.ComboSearch
         // ══════════════════════════════════════════════════════════════
 
         private readonly ComboSearchDropdown _dropdown;
+        private readonly ToolTip _toolTip = new ToolTip();
 
         // ══════════════════════════════════════════════════════════════
-        // ESTADO
+        // ESTADO — selección simple
         // ══════════════════════════════════════════════════════════════
 
         private bool _isDropdownOpen = false;
@@ -53,6 +64,14 @@ namespace Procont.Utils.Components.ComboSearch
         private object _selectedItem = null;
         private object _selectedValue = null;
         private string _displayText = "";
+
+        // ══════════════════════════════════════════════════════════════
+        // ESTADO — multi-select
+        // ══════════════════════════════════════════════════════════════
+
+        private bool _multiSelect = false;
+        private readonly List<object> _selectedValues = new List<object>();
+        private readonly List<string> _selectedDisplayTexts = new List<string>();
 
         // ── Datasource ────────────────────────────────────────────────
         private IList _dataSource;
@@ -92,7 +111,7 @@ namespace Procont.Utils.Components.ComboSearch
             set { _valueMember = value ?? ""; ResolveMembers(); }
         }
 
-        // ── Selección (solo lectura) ───────────────────────────────────
+        // ── Selección simple (solo lectura) ────────────────────────────
 
         [Browsable(false)]
         public object SelectedItem => _selectedItem;
@@ -102,6 +121,25 @@ namespace Procont.Utils.Components.ComboSearch
 
         [Browsable(false)]
         public int SelectedIndex { get; private set; } = -1;
+
+        // ── Multi-select (solo lectura) ────────────────────────────────
+
+        /// <summary>
+        /// Valores (ValueMember) de los ítems actualmente marcados.
+        /// Solo tiene contenido cuando <see cref="MultiSelect"/> = true.
+        /// </summary>
+        [Browsable(false)]
+        public IReadOnlyList<object> MultiSelectedValues
+            => _selectedValues.AsReadOnly();
+
+        /// <summary>
+        /// Textos visibles (DisplayMember) de los ítems marcados,
+        /// en el orden del datasource.
+        /// Solo tiene contenido cuando <see cref="MultiSelect"/> = true.
+        /// </summary>
+        [Browsable(false)]
+        public IReadOnlyList<string> MultiSelectedDisplayTexts
+            => _selectedDisplayTexts.AsReadOnly();
 
         // ══════════════════════════════════════════════════════════════
         // PROPIEDADES — Apariencia / UX
@@ -154,6 +192,49 @@ namespace Procont.Utils.Components.ComboSearch
         }
 
         // ══════════════════════════════════════════════════════════════
+        // PROPIEDAD — Multi-select
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Cuando es <c>true</c>, cada ítem del dropdown muestra un checkbox
+        /// y el control acumula la selección mostrando los textos separados
+        /// por coma. Cambiar a <c>false</c> limpia la selección múltiple.
+        /// </summary>
+        [Category("ComboSearch")]
+        [Description("Permite seleccionar múltiples ítems mediante checkboxes.")]
+        [DefaultValue(false)]
+        public bool MultiSelect
+        {
+            get => _multiSelect;
+            set
+            {
+                if (_multiSelect == value) return;
+                _multiSelect = value;
+                _dropdown.MultiSelect = value;
+
+                // Limpiar el estado del modo anterior
+                if (value)
+                {
+                    // Simple → Multi: borrar selección simple
+                    _hasSelection = false;
+                    _selectedItem = null;
+                    _selectedValue = null;
+                    _displayText = "";
+                }
+                else
+                {
+                    // Multi → Simple: borrar selección múltiple
+                    _selectedValues.Clear();
+                    _selectedDisplayTexts.Clear();
+                    _hasSelection = false;
+                    _displayText = "";
+                    _dropdown.ClearChecked();
+                }
+                Invalidate();
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════════
         // PROPIEDADES — Action button
         // ══════════════════════════════════════════════════════════════
 
@@ -193,7 +274,7 @@ namespace Procont.Utils.Components.ComboSearch
         public event EventHandler SelectedIndexChanged;
 
         [Category("ComboSearch")]
-        [Description("El usuario confirmó una selección (Enter o clic).")]
+        [Description("El usuario confirmó una selección en modo simple (Enter o clic).")]
         public event EventHandler<ComboSelectionEventArgs> SelectionCommitted;
 
         [Category("ComboSearch")]
@@ -205,10 +286,37 @@ namespace Procont.Utils.Components.ComboSearch
         public event EventHandler<ComboActionEventArgs> ActionButtonClicked;
 
         [Category("ComboSearch")]
+        [Description("Se dispara cada vez que se marca o desmarca un ítem en modo MultiSelect.")]
+        public event EventHandler<MultiSelectionChangedEventArgs> MultiSelectionChanged;
+
+        [Category("ComboSearch")]
         public event EventHandler DropdownOpened;
 
         [Category("ComboSearch")]
         public event EventHandler DropdownClosed;
+
+        // ══════════════════════════════════════════════════════════════
+        // TAMAÑO — altura fija, ancho libre
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Tamaño inicial cuando se arrastra desde el Toolbox.
+        /// El ancho es 200 px; la altura siempre es <see cref="ComboSearchTheme.InputHeight"/>.
+        /// </summary>
+        protected override Size DefaultSize
+            => new Size(200, ComboSearchTheme.InputHeight);
+
+        /// <summary>
+        /// Garantiza que la altura sea siempre exactamente
+        /// <see cref="ComboSearchTheme.InputHeight"/> (23 px),
+        /// igual que un <see cref="ComboBox"/> nativo de WinForms.
+        /// El ancho no está restringido.
+        /// </summary>
+        protected override void SetBoundsCore(
+            int x, int y, int width, int height, BoundsSpecified specified)
+        {
+            base.SetBoundsCore(x, y, width, ComboSearchTheme.InputHeight, specified);
+        }
 
         // ══════════════════════════════════════════════════════════════
         // CONSTRUCTOR
@@ -216,9 +324,6 @@ namespace Procont.Utils.Components.ComboSearch
 
         public ComboSearchBox()
         {
-            Height = ComboSearchTheme.InputHeight;
-            MinimumSize = new Size(80, ComboSearchTheme.InputHeight);
-            MaximumSize = new Size(int.MaxValue, ComboSearchTheme.InputHeight);
             Cursor = Cursors.Hand;
 
             SetStyle(
@@ -232,12 +337,16 @@ namespace Procont.Utils.Components.ComboSearch
 
             _dropdown.ItemCommitted += Dropdown_ItemCommitted;
             _dropdown.ActionClicked += Dropdown_ActionClicked;
+
+            _dropdown.MultiSelectionChanged += Dropdown_MultiSelectionChanged;
+
             _dropdown.IndexChanged += (s, e) =>
             {
                 var sel = _dropdown.GetSelectedControl();
                 if (sel != null) SelectedIndex = sel.ItemIndex;
                 SelectedIndexChanged?.Invoke(this, EventArgs.Empty);
             };
+
             _dropdown.Closed += (s, e) =>
             {
                 _isDropdownOpen = false;
@@ -247,7 +356,7 @@ namespace Procont.Utils.Components.ComboSearch
         }
 
         // ══════════════════════════════════════════════════════════════
-        // MOUSE / TECLADO en el control principal
+        // MOUSE / TECLADO
         // ══════════════════════════════════════════════════════════════
 
         protected override void OnMouseEnter(EventArgs e)
@@ -328,15 +437,11 @@ namespace Procont.Utils.Components.ComboSearch
 
             var rect = new Rectangle(0, 0, Width - 1, Height - 1);
 
-            // Fondo
-            Color bg = _isHovered || _isDropdownOpen
-                ? ComboSearchTheme.InputBackground
-                : ComboSearchTheme.InputBackground;
-
-            using (var fill = new SolidBrush(bg))
+            // ── Fondo ─────────────────────────────────────────────────
+            using (var fill = new SolidBrush(ComboSearchTheme.InputBackground))
                 g.FillRoundedRect(fill, rect, ComboSearchTheme.BorderRadius);
 
-            // Borde — accent cuando el dropdown está abierto
+            // ── Borde ─────────────────────────────────────────────────
             Color borderColor = _isDropdownOpen
                 ? ComboSearchTheme.InputBorderFocus
                 : _isHovered
@@ -352,14 +457,15 @@ namespace Procont.Utils.Components.ComboSearch
             int clearZone = _hasSelection ? 22 : 0;
             int textWidth = Width - padH * 2 - chevronZone - clearZone;
 
-            // Texto de selección o placeholder
+            // ── Texto de selección o placeholder ──────────────────────
             if (_hasSelection && !string.IsNullOrEmpty(_displayText))
             {
                 using (var b = new SolidBrush(ComboSearchTheme.InputText))
                 using (var fmt = new StringFormat
                 {
                     LineAlignment = StringAlignment.Center,
-                    Trimming = StringTrimming.EllipsisCharacter
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.NoClip
                 })
                     g.DrawString(_displayText, ComboSearchTheme.FontInput, b,
                         new RectangleF(padH, 0, textWidth, Height), fmt);
@@ -370,13 +476,14 @@ namespace Procont.Utils.Components.ComboSearch
                 using (var fmt = new StringFormat
                 {
                     LineAlignment = StringAlignment.Center,
-                    Trimming = StringTrimming.EllipsisCharacter
+                    Trimming = StringTrimming.EllipsisCharacter,
+                    FormatFlags = StringFormatFlags.NoWrap | StringFormatFlags.NoClip
                 })
                     g.DrawString(_placeholder, ComboSearchTheme.FontInput, b,
                         new RectangleF(padH, 0, textWidth, Height), fmt);
             }
 
-            // Botón X (limpiar selección)
+            // ── Botón X (limpiar selección) ────────────────────────────
             if (_hasSelection)
             {
                 int cx = Width - chevronZone - clearZone / 2 - 2;
@@ -389,8 +496,43 @@ namespace Procont.Utils.Components.ComboSearch
                 }
             }
 
-            // Chevron
+            // ── Chevron ───────────────────────────────────────────────
             DrawChevron(g);
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            int chevronZone = 24;
+            int clearZone = _hasSelection ? 22 : 0;
+            int padH = ComboSearchTheme.PaddingH;
+            int textWidth = Width - padH * 2 - chevronZone - clearZone;
+
+            var textRect = new Rectangle(padH, 0, textWidth, Height);
+
+            if (!textRect.Contains(e.Location))
+            {
+                _toolTip.SetToolTip(this, null);
+                return;
+            }
+
+            string text = (_hasSelection && !string.IsNullOrEmpty(_displayText))
+                ? _displayText
+                : _placeholder;
+
+            using (var g = CreateGraphics())
+            {
+                if (IsTextTrimmed(g, text, ComboSearchTheme.FontInput, textWidth))
+                    _toolTip.SetToolTip(this, text);
+                else
+                    _toolTip.SetToolTip(this, null);
+            }
+        }
+
+        private bool IsTextTrimmed(Graphics g, string text, Font font, float maxWidth)
+        {
+            var size = g.MeasureString(text, font);
+            return size.Width > maxWidth;
         }
 
         private void DrawChevron(Graphics g)
@@ -424,11 +566,8 @@ namespace Procont.Utils.Components.ComboSearch
         private void OpenDropdown()
         {
             if (_isDropdownOpen) return;
-            //if (_dataSource == null) return;
-
             _isDropdownOpen = true;
 
-            // Pasar el datasource y las funciones de extracción al dropdown
             _dropdown.Open(
                 dataSource: _dataSource,
                 getDisplay: GetDisplay,
@@ -447,6 +586,7 @@ namespace Procont.Utils.Components.ComboSearch
 
         private void Dropdown_ItemCommitted(object sender, ComboSearchItemControl ctrl)
         {
+            // Solo se llama en modo selección simple
             _hasSelection = true;
             _selectedItem = ctrl.DataItem;
             _selectedValue = ctrl.Value;
@@ -464,12 +604,40 @@ namespace Procont.Utils.Components.ComboSearch
             ActionButtonClicked?.Invoke(this, e);
         }
 
+        /// <summary>
+        /// Se llama cada vez que el usuario marca/desmarca un ítem en modo multi-select.
+        /// Sincroniza el estado local y actualiza el texto del control.
+        /// </summary>
+        private void Dropdown_MultiSelectionChanged(object sender, EventArgs e)
+        {
+            var values = _dropdown.GetCheckedValues();
+            var displays = _dropdown.GetCheckedDisplayTexts();
+
+            _selectedValues.Clear();
+            _selectedValues.AddRange(values);
+
+            _selectedDisplayTexts.Clear();
+            _selectedDisplayTexts.AddRange(displays);
+
+            _hasSelection = _selectedValues.Count > 0;
+            // Texto concatenado separado por coma; el ellipsis lo pone OnPaint si excede el ancho
+            _displayText = string.Join(", ", _selectedDisplayTexts);
+
+            Invalidate();
+
+            MultiSelectionChanged?.Invoke(this,
+                new MultiSelectionChangedEventArgs(
+                    new List<object>(_selectedValues),
+                    new List<string>(_selectedDisplayTexts)));
+        }
+
         // ══════════════════════════════════════════════════════════════
         // SELECCIÓN PROGRAMÁTICA
         // ══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Selecciona el ítem cuyo Value coincide con <paramref name="value"/>.
+        /// [Modo simple] Selecciona el ítem cuyo Value coincide con
+        /// <paramref name="value"/>.
         /// </summary>
         public bool SetSelectedValue(object value)
         {
@@ -491,19 +659,68 @@ namespace Procont.Utils.Components.ComboSearch
             return false;
         }
 
-        /// <summary>Limpia la selección actual.</summary>
+        /// <summary>
+        /// [Modo multi-select] Establece programáticamente los valores marcados.
+        /// No dispara <see cref="MultiSelectionChanged"/>.
+        /// </summary>
+        public void SetMultiSelectedValues(IEnumerable<object> values)
+        {
+            if (!_multiSelect) return;
+
+            _dropdown.SetCheckedValues(values);
+
+            // Sincronizar estado local
+            var vs = _dropdown.GetCheckedValues();
+            var ds = _dropdown.GetCheckedDisplayTexts();
+
+            _selectedValues.Clear();
+            _selectedValues.AddRange(vs);
+
+            _selectedDisplayTexts.Clear();
+            _selectedDisplayTexts.AddRange(ds);
+
+            _hasSelection = _selectedValues.Count > 0;
+            _displayText = string.Join(", ", _selectedDisplayTexts);
+            Invalidate();
+        }
+
+        /// <summary>Limpia la selección actual (simple o múltiple).</summary>
         public void Clear() => ClearSelection();
 
         private void ClearSelection()
         {
-            if (!_hasSelection) return;
-            _hasSelection = false;
-            _selectedItem = null;
-            _selectedValue = null;
-            _displayText = "";
-            SelectedIndex = -1;
-            Invalidate();
-            SelectionCleared?.Invoke(this, EventArgs.Empty);
+            if (_multiSelect)
+            {
+                if (_selectedValues.Count == 0) return;
+
+                _selectedValues.Clear();
+                _selectedDisplayTexts.Clear();
+                _dropdown.ClearChecked();
+                _hasSelection = false;
+                _displayText = "";
+
+                Invalidate();
+                SelectionCleared?.Invoke(this, EventArgs.Empty);
+
+                // Notificar estado vacío
+                MultiSelectionChanged?.Invoke(this,
+                    new MultiSelectionChangedEventArgs(
+                        new List<object>(),
+                        new List<string>()));
+            }
+            else
+            {
+                if (!_hasSelection) return;
+
+                _hasSelection = false;
+                _selectedItem = null;
+                _selectedValue = null;
+                _displayText = "";
+                SelectedIndex = -1;
+
+                Invalidate();
+                SelectionCleared?.Invoke(this, EventArgs.Empty);
+            }
         }
 
         // ══════════════════════════════════════════════════════════════

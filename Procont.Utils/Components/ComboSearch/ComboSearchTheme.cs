@@ -23,10 +23,7 @@ namespace Procont.Utils.Components.ComboSearch
         public static Color DropdownBackground => Color.White;
         public static Color DropdownBorder => Color.Gray;
         public static Color ItemBackground => SystemColors.Window;
-        public static Color ItemHover => Color.FromArgb(
-            50, SystemColors.Highlight.R,
-                SystemColors.Highlight.G,
-                SystemColors.Highlight.B);
+        public static Color ItemHover => SystemColors.ControlLight;
         public static Color ItemSelected => SystemColors.Highlight;
         public static Color ItemText => SystemColors.WindowText;
         public static Color ItemSubtitle => SystemColors.GrayText;
@@ -65,6 +62,6 @@ namespace Procont.Utils.Components.ComboSearch
         public const int DropdownRadius = ProcontTheme.RadiusMedium;   // 8
         public const int MaxVisibleItems = 10;
         public const int IconSize = ProcontTheme.IconSizeBase;   // 16
-        public const int PaddingH = 3;
+        public const int PaddingH = 8;
     }
 }

@@ -12,20 +12,27 @@ namespace Procont.Utils.Components.ComboSearch
 {
     /// <summary>
     /// Dropdown flotante del ComboSearchBox.
-    /// Contiene el input de búsqueda, la lista de ítems,
-    /// el empty state y el botón de acción sticky.
+    /// Soporta modo de selección simple y multi-selección con checkboxes.
+    ///
+    /// ── MULTI-SELECT ─────────────────────────────────────────────────
+    /// Cuando MultiSelect = true:
+    ///   - Cada ítem muestra un checkbox a la izquierda.
+    ///   - El clic alterna el estado marcado SIN cerrar el dropdown.
+    ///   - Se dispara MultiSelectionChanged en cada toggle.
+    ///   - El estado marcado persiste al filtrar/buscar (basado en Value).
+    ///   - Enter cierra el dropdown; Esc cierra sin cambios.
     ///
     /// ── ESTRUCTURA VISUAL ────────────────────────────────────────────
     ///   ┌─ ToolStripDropDown ─────────────────────────────────┐
     ///   │  ┌─ SearchBox (TextBox con lupa) ─────────────────┐ │
-    ///   │  └─────────────────────────────────────────────── │
-    ///   │  ┌─ ScrollPanel (máx N ítems) ──────────────────┐ │
-    ///   │  │  ComboSearchItemControl × N                   │ │
-    ///   │  └─────────────────────────────────────────────── │
-    ///   │  ┌─ EmptyStatePanel (si no hay resultados) ─────┐ │
-    ///   │  └─────────────────────────────────────────────── │
-    ///   │  ┌─ ActionButton (sticky) ──────────────────────┐ │
-    ///   │  └─────────────────────────────────────────────── │
+    ///   │  └───────────────────────────────────────────────  │
+    ///   │  ┌─ ScrollPanel (máx N ítems) ──────────────────┐  │
+    ///   │  │  ComboSearchItemControl × N (con checkbox)   │  │
+    ///   │  └───────────────────────────────────────────────  │
+    ///   │  ┌─ EmptyStatePanel (si no hay resultados) ─────┐  │
+    ///   │  └───────────────────────────────────────────────  │
+    ///   │  ┌─ ActionButton (sticky) ──────────────────────┐  │
+    ///   │  └───────────────────────────────────────────────  │
     ///   └─────────────────────────────────────────────────── ┘
     /// </summary>
     internal class ComboSearchDropdown : ToolStripDropDown
@@ -45,6 +52,10 @@ namespace Procont.Utils.Components.ComboSearch
             = new List<ComboSearchItemControl>();
         private int _selectedIndex = -1;
 
+        // ── Multi-select: valores marcados (persisten al filtrar) ──────
+        private readonly HashSet<object> _checkedValues = new HashSet<object>();
+        private bool _multiSelect = false;
+
         // ── Datasource y funciones de extracción ──────────────────────
         private IList _dataSource;
         private Func<object, string> _getDisplay;
@@ -53,7 +64,7 @@ namespace Procont.Utils.Components.ComboSearch
         private Func<object, IconChar> _getIcon;
 
         // ══════════════════════════════════════════════════════════════
-        // CONFIGURACIÓN (expuesta desde ComboSearchBox)
+        // CONFIGURACIÓN
         // ══════════════════════════════════════════════════════════════
 
         public string ActionLabel { get; set; } = "+ Nuevo";
@@ -61,32 +72,54 @@ namespace Procont.Utils.Components.ComboSearch
         public string EmptyStateText { get; set; } = "No hay ítems. Puedes agregarlo desde el botón {action}.";
         public int MaxVisible { get; set; } = ComboSearchTheme.MaxVisibleItems;
         public ComboSearchMode SearchMode { get; set; } = ComboSearchMode.Contains;
-        public string SearchPlaceholder
-        {
-            get => _searchPanel.Placeholder;
-            set => _searchPanel.Placeholder = value;
-        }
         public int SearchDelay
         {
             get => _debounceTimer.Interval;
             set => _debounceTimer.Interval = Math.Max(0, value);
         }
+        public string SearchPlaceholder
+        {
+            get => _searchPanel.Placeholder;
+            set => _searchPanel.Placeholder = value;
+        }
+
+        /// <summary>
+        /// Activa el modo multi-selección con checkboxes.
+        /// Al cambiar, se limpia la selección actual.
+        /// </summary>
+        public bool MultiSelect
+        {
+            get => _multiSelect;
+            set
+            {
+                if (_multiSelect == value) return;
+                _multiSelect = value;
+                _checkedValues.Clear();
+            }
+        }
 
         // ══════════════════════════════════════════════════════════════
-        // EVENTOS (consumidos por ComboSearchBox)
+        // EVENTOS
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>El usuario confirmó un ítem (Enter o clic).</summary>
+        /// <summary>[Selección simple] El usuario confirmó un ítem (Enter o clic).</summary>
         public event EventHandler<ComboSearchItemControl> ItemCommitted;
 
-        /// <summary>El usuario hizo clic en el action button.</summary>
+        /// <summary>[Selección simple] El usuario hizo clic en el action button.</summary>
         public event EventHandler<ComboActionEventArgs> ActionClicked;
 
-        /// <summary>La selección navegada cambió (↑↓).</summary>
+        /// <summary>[Selección simple] La selección navegada cambió (↑↓).</summary>
         public event EventHandler IndexChanged;
 
+        /// <summary>
+        /// [Multi-select] Se dispara cada vez que el usuario marca o desmarca
+        /// un ítem. El caller debe consultar GetCheckedValues() / GetCheckedDisplayTexts()
+        /// para obtener el estado actualizado.
+        /// </summary>
+        internal event EventHandler MultiSelectionChanged;
+
         // ══════════════════════════════════════════════════════════════
-        // ÍNDICE SELECCIONADO (navegación)
+        // ÍNDICE SELECCIONADO (navegación simple)
         // ══════════════════════════════════════════════════════════════
 
         public int SelectedIndex
@@ -108,6 +141,52 @@ namespace Procont.Utils.Components.ComboSearch
 
                 IndexChanged?.Invoke(this, EventArgs.Empty);
             }
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // API MULTI-SELECT
+        // ══════════════════════════════════════════════════════════════
+
+        /// <summary>Devuelve la lista de valores marcados actualmente.</summary>
+        internal List<object> GetCheckedValues() => new List<object>(_checkedValues);
+
+        /// <summary>
+        /// Devuelve los textos visibles de los ítems marcados,
+        /// respetando el orden del datasource.
+        /// </summary>
+        internal List<string> GetCheckedDisplayTexts()
+        {
+            var result = new List<string>();
+            if (_dataSource == null || _getDisplay == null || _getValue == null)
+                return result;
+
+            foreach (var raw in _dataSource)
+            {
+                if (raw == null) continue;
+                var val = _getValue(raw);
+                if (_checkedValues.Contains(val))
+                    result.Add(_getDisplay(raw));
+            }
+            return result;
+        }
+
+        /// <summary>Desmarca todos los ítems.</summary>
+        internal void ClearChecked()
+        {
+            _checkedValues.Clear();
+            foreach (var ctrl in _itemControls)
+                ctrl.IsChecked = false;
+        }
+
+        /// <summary>Establece programáticamente los valores marcados.</summary>
+        internal void SetCheckedValues(IEnumerable<object> values)
+        {
+            _checkedValues.Clear();
+            if (values != null)
+                foreach (var v in values) _checkedValues.Add(v);
+
+            foreach (var ctrl in _itemControls)
+                ctrl.IsChecked = _checkedValues.Contains(ctrl.Value);
         }
 
         // ══════════════════════════════════════════════════════════════
@@ -139,16 +218,16 @@ namespace Procont.Utils.Components.ComboSearch
                 Dock = DockStyle.Fill,
             };
 
-            // ── Wrapper con borde de 1 px ──────────────────────────────────
+            // ── Wrapper con borde de 1 px ──────────────────────────────
             _borderPanel = new Panel
             {
                 Margin = Padding.Empty,
-                Padding = new Padding(1),    // ← el gap que muestra el borde
+                Padding = new Padding(1),
                 BackColor = SystemColors.ControlDark
             };
             _borderPanel.Controls.Add(_root);
 
-            // ── Input de búsqueda (parte superior) ─────────────────────
+            // ── Input de búsqueda ──────────────────────────────────────
             _searchPanel = new SearchInputPanel { Dock = DockStyle.Top };
             _searchPanel.TextChanged += (s, e) =>
             {
@@ -173,11 +252,14 @@ namespace Procont.Utils.Components.ComboSearch
             _emptyPanel = new EmptyStatePanel { Dock = DockStyle.Top, Visible = false };
 
             // ── Action button sticky ───────────────────────────────────
-            _actionButton = new IconButton { Dock = DockStyle.Bottom, TextImageRelation = TextImageRelation.ImageBeforeText };
+            _actionButton = new IconButton
+            {
+                Dock = DockStyle.Bottom,
+                TextImageRelation = TextImageRelation.ImageBeforeText
+            };
             _actionButton.Click += (s, e) =>
             {
-                var args = new ComboActionEventArgs(_searchPanel.Text);
-                ActionClicked?.Invoke(this, args);
+                ActionClicked?.Invoke(this, new ComboActionEventArgs(_searchPanel.Text));
                 Close();
             };
 
@@ -196,12 +278,9 @@ namespace Procont.Utils.Components.ComboSearch
         }
 
         // ══════════════════════════════════════════════════════════════
-        // API PÚBLICA — llamada desde ComboSearchBox
+        // API PÚBLICA
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Abre el dropdown bajo <paramref name="owner"/> con el datasource dado.
-        /// </summary>
         public void Open(
             IList dataSource,
             Func<object, string> getDisplay,
@@ -219,25 +298,19 @@ namespace Procont.Utils.Components.ComboSearch
             _searchPanel.Clear();
             _selectedIndex = -1;
 
-            int w = owner.Width;
-            SetWidth(w);
+            SetWidth(owner.Width);
             RebuildItems("");
 
-            // Posicionamiento con flip vertical
+            // Posicionamiento con flip vertical si no hay espacio abajo
             var screenPos = owner.PointToScreen(new Point(0, owner.Height + 2));
             var screen = Screen.FromControl(owner).WorkingArea;
             if (screenPos.Y + Height > screen.Bottom)
                 screenPos = owner.PointToScreen(new Point(0, -Height - 2));
 
             Show(screenPos);
-
-            // Dar foco al input de búsqueda después de mostrarse
             BeginInvoke(new Action(() => _searchPanel.FocusInput()));
         }
 
-        /// <summary>
-        /// Actualiza etiqueta e ícono del action button.
-        /// </summary>
         public void UpdateActionButton(string label, IconChar icon)
         {
             ActionLabel = label;
@@ -253,17 +326,13 @@ namespace Procont.Utils.Components.ComboSearch
         public void MoveUp()
         {
             if (_itemControls.Count == 0) return;
-            SelectedIndex = _selectedIndex <= 0
-                ? _itemControls.Count - 1
-                : _selectedIndex - 1;
+            SelectedIndex = _selectedIndex <= 0 ? _itemControls.Count - 1 : _selectedIndex - 1;
         }
 
         public void MoveDown()
         {
             if (_itemControls.Count == 0) return;
-            SelectedIndex = _selectedIndex >= _itemControls.Count - 1
-                ? 0
-                : _selectedIndex + 1;
+            SelectedIndex = _selectedIndex >= _itemControls.Count - 1 ? 0 : _selectedIndex + 1;
         }
 
         public ComboSearchItemControl GetSelectedControl() =>
@@ -287,7 +356,7 @@ namespace Procont.Utils.Components.ComboSearch
                 return;
             }
 
-            // Filtrar
+            // ── Filtrar ───────────────────────────────────────────────
             var filtered = new List<(object item, string display, string subtitle, IconChar icon, object value)>();
             bool hasFilter = !string.IsNullOrEmpty(filter);
 
@@ -307,33 +376,59 @@ namespace Procont.Utils.Components.ComboSearch
 
             if (filtered.Count == 0)
             {
-                string msg = EmptyStateText.Replace("{action}", ActionLabel);
-                ShowEmpty(msg);
+                ShowEmpty(EmptyStateText.Replace("{action}", ActionLabel));
                 return;
             }
 
             _emptyPanel.Visible = false;
             _scrollPanel.Visible = true;
 
-            // Construir controles (Dock.Top = LIFO → agregar en reversa)
+            // ── Construir controles ────────────────────────────────────
             for (int i = 0; i < filtered.Count; i++)
             {
                 var d = filtered[i];
                 var ctrl = new ComboSearchItemControl(
                     d.item, d.display, d.subtitle, d.icon, d.value, i);
+
+                if (_multiSelect)
+                {
+                    ctrl.MultiSelect = true;
+                    // Restaurar estado marcado si el valor estaba previamente seleccionado
+                    ctrl.IsChecked = _checkedValues.Contains(d.value);
+                }
+
                 _itemControls.Add(ctrl);
             }
 
+            // Dock.Top = LIFO, se agregan en reversa para mantener el orden visual
             for (int i = _itemControls.Count - 1; i >= 0; i--)
             {
                 var ctrl = _itemControls[i];
                 int idx = i;
+
                 ctrl.ItemClicked += (s, e) =>
                 {
-                    SelectedIndex = idx;
-                    ItemCommitted?.Invoke(this, ctrl);
-                    Close();
+                    if (_multiSelect)
+                    {
+                        // ── Modo multi-select: toggle sin cerrar ──────
+                        if (_checkedValues.Contains(ctrl.Value))
+                            _checkedValues.Remove(ctrl.Value);
+                        else
+                            _checkedValues.Add(ctrl.Value);
+
+                        ctrl.IsChecked = _checkedValues.Contains(ctrl.Value);
+                        MultiSelectionChanged?.Invoke(this, EventArgs.Empty);
+                        // El dropdown permanece abierto
+                    }
+                    else
+                    {
+                        // ── Modo simple: confirmar y cerrar ───────────
+                        SelectedIndex = idx;
+                        ItemCommitted?.Invoke(this, ctrl);
+                        Close();
+                    }
                 };
+
                 _scrollPanel.Controls.Add(ctrl);
             }
 
@@ -349,7 +444,7 @@ namespace Procont.Utils.Components.ComboSearch
         }
 
         // ══════════════════════════════════════════════════════════════
-        // TECLADO — manejado en el SearchInputPanel
+        // TECLADO
         // ══════════════════════════════════════════════════════════════
 
         private void SearchPanel_KeyDown(object sender, KeyEventArgs e)
@@ -367,11 +462,19 @@ namespace Procont.Utils.Components.ComboSearch
                     break;
 
                 case Keys.Enter:
-                    var sel = GetSelectedControl();
-                    if (sel != null)
+                    if (_multiSelect)
                     {
-                        ItemCommitted?.Invoke(this, sel);
+                        // En multi-select, Enter cierra el dropdown
                         Close();
+                    }
+                    else
+                    {
+                        var sel = GetSelectedControl();
+                        if (sel != null)
+                        {
+                            ItemCommitted?.Invoke(this, sel);
+                            Close();
+                        }
                     }
                     e.Handled = true;
                     break;
@@ -389,12 +492,6 @@ namespace Procont.Utils.Components.ComboSearch
 
         private void SetWidth(int w)
         {
-            //_root.Width = w;
-            //_searchPanel.Width = w;
-            //_scrollPanel.Width = w;
-            //_emptyPanel.Width = w;
-            //_actionButton.Width = w;
-
             _borderPanel.Width = w;
             _host.Width = w;
             Width = w;
@@ -402,20 +499,6 @@ namespace Procont.Utils.Components.ComboSearch
 
         private void RecalcHeight(int itemCount)
         {
-            //int searchH = ComboSearchTheme.SearchInputHeight;
-            //int visible = Math.Min(itemCount, MaxVisible);
-            //int scrollH = visible * ComboSearchTheme.ItemHeight;
-            //int emptyH = _emptyPanel.Visible ? ComboSearchTheme.EmptyStateHeight : 0;
-            //int actionH = ComboSearchTheme.ActionHeight;
-
-            //_scrollPanel.Height = scrollH;
-            //_emptyPanel.Height = emptyH;
-
-            //int totalH = searchH + scrollH + emptyH + actionH;
-            //_root.Height = totalH;
-            //_host.Height = totalH;
-            //Height = totalH;
-
             int searchH = ComboSearchTheme.SearchInputHeight;
             int visible = Math.Min(itemCount, MaxVisible);
             int scrollH = visible * ComboSearchTheme.ItemHeight;
@@ -427,7 +510,7 @@ namespace Procont.Utils.Components.ComboSearch
 
             int totalH = searchH + scrollH + emptyH + actionH;
             _root.Height = totalH;
-            _borderPanel.Height = totalH + 2;   // + 2 por el 1px de borde arriba/abajo
+            _borderPanel.Height = totalH + 2;
             _host.Height = totalH + 2;
             Height = totalH + 2;
         }
@@ -449,9 +532,6 @@ namespace Procont.Utils.Components.ComboSearch
         // CONTROLES INTERNOS PRIVADOS
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Panel con TextBox de búsqueda + ícono de lupa.
-        /// </summary>
         private class SearchInputPanel : Panel
         {
             private readonly TextBox _tb;
@@ -499,23 +579,15 @@ namespace Procont.Utils.Components.ComboSearch
             public void Clear() => _tb.Text = "";
             public void FocusInput() => _tb.Focus();
 
-            protected override void OnResize(EventArgs e)
-            {
-                base.OnResize(e);
-                PositionInput();
-            }
+            protected override void OnResize(EventArgs e) { base.OnResize(e); PositionInput(); }
 
             private void PositionInput()
             {
                 if (_tb == null) return;
-                int iconW = 16 + 8; // ícono + gap
+                int iconW = 16 + 8;
                 int padH = ComboSearchTheme.PaddingH;
                 int padV = (Height - _tb.PreferredHeight) / 2;
-                _tb.SetBounds(
-                    padH + iconW,
-                    padV,
-                    Width - padH * 2 - iconW,
-                    _tb.PreferredHeight);
+                _tb.SetBounds(padH + iconW, padV, Width - padH * 2 - iconW, _tb.PreferredHeight);
                 Invalidate();
             }
 
@@ -525,11 +597,9 @@ namespace Procont.Utils.Components.ComboSearch
                 g.SetHighQuality();
                 g.Clear(BackColor);
 
-                // Línea divisoria inferior
                 using (var pen = new Pen(ComboSearchTheme.DropdownBorder, 1))
                     g.DrawLine(pen, 8, Height - 1, Width - 8, Height - 1);
 
-                // Ícono lupa
                 int iconSize = 14;
                 int iconX = ComboSearchTheme.PaddingH;
                 int iconY = (Height - iconSize) / 2;
@@ -540,9 +610,8 @@ namespace Procont.Utils.Components.ComboSearch
                         iconSize))
                         g.DrawImage(bmp, iconX, iconY, iconSize, iconSize);
                 }
-                catch { /* FontAwesome puede no estar disponible en design-time */ }
+                catch { }
 
-                // Placeholder cuando el TextBox está vacío
                 if (string.IsNullOrEmpty(_tb.Text))
                 {
                     using (var b = new SolidBrush(ComboSearchTheme.InputPlaceholder))
@@ -553,7 +622,6 @@ namespace Procont.Utils.Components.ComboSearch
             }
         }
 
-        /// <summary>Panel de estado vacío con mensaje CTA.</summary>
         private class EmptyStatePanel : Panel
         {
             private string _message = "";
@@ -587,63 +655,6 @@ namespace Procont.Utils.Components.ComboSearch
                         new RectangleF(12, 0, Width - 24, Height), fmt);
             }
         }
-
-        /// <summary>Botón de acción sticky, siempre visible al fondo.</summary>
-        private class ActionButton : Control
-        {
-            private bool _hovered = false;
-
-            public string Label { get; set; } = "+ Nuevo";
-            public IconChar Icon { get; set; } = IconChar.Plus;
-            public event EventHandler Clicked;
-
-            public ActionButton()
-            {
-                Height = ComboSearchTheme.ActionHeight;
-                Cursor = Cursors.Hand;
-                BackColor = ComboSearchTheme.ActionBackground;
-                SetStyle(ControlStyles.OptimizedDoubleBuffer |
-                         ControlStyles.AllPaintingInWmPaint |
-                         ControlStyles.UserPaint, true);
-            }
-
-            protected override void OnMouseEnter(EventArgs e) { base.OnMouseEnter(e); _hovered = true; Invalidate(); }
-            protected override void OnMouseLeave(EventArgs e) { base.OnMouseLeave(e); _hovered = false; Invalidate(); }
-            protected override void OnClick(EventArgs e) { base.OnClick(e); Clicked?.Invoke(this, EventArgs.Empty); }
-
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                var g = e.Graphics;
-                g.SetHighQuality();
-                g.Clear(_hovered ? ComboSearchTheme.ActionBackgroundHover : ComboSearchTheme.ActionBackground);
-
-                using (var pen = new Pen(ComboSearchTheme.ActionBorderTop, 1))
-                    g.DrawLine(pen, 0, 0, Width, 0);
-
-                int x = ComboSearchTheme.PaddingH;
-                if (Icon != IconChar.None)
-                {
-                    int is_ = ComboSearchTheme.IconSize;
-                    int iy = (Height - is_) / 2;
-                    try
-                    {
-                        using (var bmp = Icon.ToBitmap(ComboSearchTheme.ActionIcon, is_))
-                            g.DrawImage(bmp, x, iy, is_, is_);
-                    }
-                    catch { }
-                    x += is_ + 8;
-                }
-
-                using (var b = new SolidBrush(ComboSearchTheme.ActionText))
-                using (var fmt = new StringFormat { LineAlignment = StringAlignment.Center })
-                    g.DrawString(Label, ComboSearchTheme.FontAction, b,
-                        new RectangleF(x, 0, Width - x - ComboSearchTheme.PaddingH, Height), fmt);
-            }
-        }
-
-        // ══════════════════════════════════════════════════════════════
-        // DISPOSE
-        // ══════════════════════════════════════════════════════════════
 
         protected override void Dispose(bool disposing)
         {

@@ -9,7 +9,8 @@ namespace Procont.Utils.Components.ComboSearch
 {
     /// <summary>
     /// Control de un ítem individual dentro del dropdown del ComboSearchBox.
-    /// Soporta texto principal, subtítulo opcional e ícono FontAwesome.
+    /// Soporta texto principal, subtítulo opcional, ícono FontAwesome
+    /// y modo multi-selección con checkbox integrado.
     /// </summary>
     [ToolboxItem(false)]
     [DesignTimeVisible(false)]
@@ -18,6 +19,8 @@ namespace Procont.Utils.Components.ComboSearch
         // ── Estado ────────────────────────────────────────────────────
         private bool _isHovered = false;
         private bool _isSelected = false;
+        private bool _isChecked = false;
+        private bool _multiSelect = false;
 
         // ── Datos del ítem ────────────────────────────────────────────
         public object DataItem { get; }
@@ -31,6 +34,23 @@ namespace Procont.Utils.Components.ComboSearch
         {
             get => _isSelected;
             set { _isSelected = value; Invalidate(); }
+        }
+
+        /// <summary>
+        /// Activa el modo multi-selección: muestra un checkbox a la izquierda
+        /// de cada ítem y el clic alterna el estado marcado sin cerrar el dropdown.
+        /// </summary>
+        public bool MultiSelect
+        {
+            get => _multiSelect;
+            set { _multiSelect = value; Invalidate(); }
+        }
+
+        /// <summary>Estado del checkbox (solo relevante cuando MultiSelect = true).</summary>
+        public bool IsChecked
+        {
+            get => _isChecked;
+            set { _isChecked = value; Invalidate(); }
         }
 
         // ── Evento ────────────────────────────────────────────────────
@@ -89,14 +109,14 @@ namespace Procont.Utils.Components.ComboSearch
             var g = e.Graphics;
             g.SetHighQuality();
 
-            // Fondo
-            Color bg = _isSelected ? ComboSearchTheme.ItemSelected :
+            // ── Fondo ─────────────────────────────────────────────────
+            Color bg = _isSelected && !_multiSelect ? ComboSearchTheme.ItemSelected :
                        _isHovered ? ComboSearchTheme.ItemHover :
-                                     ComboSearchTheme.ItemBackground;
+                                                       ComboSearchTheme.ItemBackground;
             g.Clear(bg);
 
-            // Barra lateral izquierda cuando está seleccionado
-            if (_isSelected)
+            // Barra lateral izquierda (solo selección simple)
+            if (_isSelected && !_multiSelect)
             {
                 using (var b = new SolidBrush(ComboSearchTheme.ActionText))
                     g.FillRectangle(b, 0, 5, 3, Height - 10);
@@ -104,12 +124,21 @@ namespace Procont.Utils.Components.ComboSearch
 
             int x = ComboSearchTheme.PaddingH;
 
-            // Ícono
+            // ── Checkbox (multi-select) ────────────────────────────────
+            if (_multiSelect)
+            {
+                const int cbSize = 14;
+                int cbY = (Height - cbSize) / 2;
+                DrawCheckbox(g, x, cbY, cbSize);
+                x += cbSize + 8;
+            }
+
+            // ── Ícono ──────────────────────────────────────────────────
             if (Icon != IconChar.None)
             {
                 int iconSize = ComboSearchTheme.IconSize;
                 int iconY = (Height - iconSize) / 2;
-                Color iconColor = _isSelected
+                Color iconColor = (_isSelected && !_multiSelect)
                     ? ComboSearchTheme.ItemIconActive
                     : ComboSearchTheme.ItemIconColor;
                 using (var bmp = Icon.ToBitmap(iconColor, iconSize))
@@ -117,37 +146,69 @@ namespace Procont.Utils.Components.ComboSearch
                 x += iconSize + 8;
             }
 
-            // Texto principal + subtítulo
+            // ── Texto principal + subtítulo ────────────────────────────
+            int textW = Width - x - ComboSearchTheme.PaddingH;
             bool hasSubtitle = !string.IsNullOrEmpty(Subtitle);
             Color textColor = ComboSearchTheme.ItemText;
 
             if (hasSubtitle)
             {
-                // Dos líneas
                 int mainY = Height / 2 - 10;
                 int subY = Height / 2 + 1;
 
                 using (var b = new SolidBrush(textColor))
                     g.DrawString(DisplayText, ComboSearchTheme.FontItem, b,
-                        new RectangleF(x, mainY, Width - x - ComboSearchTheme.PaddingH, 14),
-                        new StringFormat { Trimming = StringTrimming.EllipsisCharacter });
+                        new RectangleF(x, mainY, textW, 14),
+                        ComboSearchRenderer.FmtLeftTop);
 
                 using (var b = new SolidBrush(ComboSearchTheme.ItemSubtitle))
                     g.DrawString(Subtitle, ComboSearchTheme.FontSubtitle, b,
-                        new RectangleF(x, subY, Width - x - ComboSearchTheme.PaddingH, 12),
-                        new StringFormat { Trimming = StringTrimming.EllipsisCharacter });
+                        new RectangleF(x, subY, textW, 12),
+                        ComboSearchRenderer.FmtLeftTop);
             }
             else
             {
-                // Una sola línea centrada
                 using (var b = new SolidBrush(textColor))
-                using (var fmt = new StringFormat
-                {
-                    LineAlignment = StringAlignment.Center,
-                    Trimming = StringTrimming.EllipsisCharacter
-                })
                     g.DrawString(DisplayText, ComboSearchTheme.FontItem, b,
-                        new RectangleF(x, 0, Width - x - ComboSearchTheme.PaddingH, Height), fmt);
+                        new RectangleF(x, 0, textW, Height),
+                        ComboSearchRenderer.FmtLeft);
+            }
+        }
+
+        // ── Checkbox rendering ────────────────────────────────────────
+        /// <summary>
+        /// Dibuja un checkbox a la posición (x, y) con el tamaño indicado.
+        /// Marcado: fondo highlight + tilde blanco.
+        /// Desmarcado: fondo blanco + borde gris.
+        /// </summary>
+        private void DrawCheckbox(Graphics g, int x, int y, int size)
+        {
+            var rect = new Rectangle(x, y, size, size);
+
+            if (_isChecked)
+            {
+                // Fondo sólido (usa el mismo color que ítems seleccionados)
+                g.FillRectangle(ComboSearchRenderer.BrushSelected, rect);
+
+                // Tilde blanca — dos segmentos formando √
+                using (var pen = new Pen(Color.White, 1.5f))
+                {
+                    pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+                    pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+                    // Segmento corto: esquina inferior-izquierda → centro-bajo
+                    g.DrawLine(pen, x + 2, y + size / 2,
+                                   x + size / 2 - 1, y + size - 3);
+                    // Segmento largo: centro-bajo → esquina superior-derecha
+                    g.DrawLine(pen, x + size / 2 - 1, y + size - 3,
+                                   x + size - 2, y + 2);
+                }
+            }
+            else
+            {
+                // Fondo blanco + borde gris
+                using (var fill = new SolidBrush(ComboSearchTheme.ItemBackground))
+                    g.FillRectangle(fill, rect);
+                g.DrawRectangle(ComboSearchRenderer.PenSeparator, rect);
             }
         }
     }

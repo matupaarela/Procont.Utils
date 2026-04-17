@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Procont.Utils.Components.ComboSearch
 {
@@ -8,16 +9,9 @@ namespace Procont.Utils.Components.ComboSearch
     /// </summary>
     public class ComboSelectionEventArgs : EventArgs
     {
-        /// <summary>Objeto original del datasource.</summary>
         public object Item { get; }
-
-        /// <summary>Valor del ValueMember (o el objeto completo si ValueMember es vacío).</summary>
         public object Value { get; }
-
-        /// <summary>Texto visible del ítem (DisplayMember).</summary>
         public string DisplayText { get; }
-
-        /// <summary>Índice dentro del datasource filtrado actual.</summary>
         public int Index { get; }
 
         internal ComboSelectionEventArgs(object item, object value, string displayText, int index)
@@ -36,12 +30,36 @@ namespace Procont.Utils.Components.ComboSearch
     /// </summary>
     public class ComboActionEventArgs : EventArgs
     {
-        /// <summary>Texto que el usuario escribió en el input al momento del clic.</summary>
         public string SearchText { get; }
 
         internal ComboActionEventArgs(string searchText)
         {
             SearchText = searchText ?? string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Args para <c>MultiSelectionChanged</c>: se dispara cada vez que el
+    /// usuario marca o desmarca un ítem en modo <see cref="ComboSearchBox.MultiSelect"/>.
+    /// Contiene los snapshots actualizados de valores y textos seleccionados.
+    /// </summary>
+    public class MultiSelectionChangedEventArgs : EventArgs
+    {
+        /// <summary>Valores (ValueMember) de todos los ítems actualmente marcados.</summary>
+        public IReadOnlyList<object> SelectedValues { get; }
+
+        /// <summary>Textos visibles (DisplayMember) de los ítems marcados, en orden del datasource.</summary>
+        public IReadOnlyList<string> SelectedDisplayTexts { get; }
+
+        /// <summary>Cantidad de ítems seleccionados.</summary>
+        public int Count => SelectedValues.Count;
+
+        internal MultiSelectionChangedEventArgs(
+            List<object> selectedValues,
+            List<string> selectedDisplayTexts)
+        {
+            SelectedValues = selectedValues.AsReadOnly();
+            SelectedDisplayTexts = selectedDisplayTexts.AsReadOnly();
         }
     }
 }
