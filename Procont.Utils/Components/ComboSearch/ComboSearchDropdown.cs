@@ -31,11 +31,12 @@ namespace Procont.Utils.Components.ComboSearch
     internal class ComboSearchDropdown : ToolStripDropDown
     {
         // ── Controles internos ────────────────────────────────────────
+        private readonly Panel _borderPanel;
         private readonly Panel _root;
         private readonly SearchInputPanel _searchPanel;
         private readonly Panel _scrollPanel;
         private readonly EmptyStatePanel _emptyPanel;
-        private readonly ActionButton _actionButton;
+        private readonly IconButton _actionButton;
         private readonly ToolStripControlHost _host;
         private readonly Timer _debounceTimer;
 
@@ -57,7 +58,7 @@ namespace Procont.Utils.Components.ComboSearch
 
         public string ActionLabel { get; set; } = "+ Nuevo";
         public IconChar ActionIcon { get; set; } = IconChar.Plus;
-        public string EmptyStateText { get; set; } = "No se encontraron resultados.";
+        public string EmptyStateText { get; set; } = "No hay ítems. Puedes agregarlo desde el botón {action}.";
         public int MaxVisible { get; set; } = ComboSearchTheme.MaxVisibleItems;
         public ComboSearchMode SearchMode { get; set; } = ComboSearchMode.Contains;
         public string SearchPlaceholder
@@ -134,8 +135,18 @@ namespace Procont.Utils.Components.ComboSearch
             {
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
-                BackColor = ComboSearchTheme.DropdownBackground
+                BackColor = ComboSearchTheme.DropdownBackground,
+                Dock = DockStyle.Fill,
             };
+
+            // ── Wrapper con borde de 1 px ──────────────────────────────────
+            _borderPanel = new Panel
+            {
+                Margin = Padding.Empty,
+                Padding = new Padding(1),    // ← el gap que muestra el borde
+                BackColor = SystemColors.ControlDark
+            };
+            _borderPanel.Controls.Add(_root);
 
             // ── Input de búsqueda (parte superior) ─────────────────────
             _searchPanel = new SearchInputPanel { Dock = DockStyle.Top };
@@ -162,8 +173,8 @@ namespace Procont.Utils.Components.ComboSearch
             _emptyPanel = new EmptyStatePanel { Dock = DockStyle.Top, Visible = false };
 
             // ── Action button sticky ───────────────────────────────────
-            _actionButton = new ActionButton { Dock = DockStyle.Bottom };
-            _actionButton.Clicked += (s, e) =>
+            _actionButton = new IconButton { Dock = DockStyle.Bottom, TextImageRelation = TextImageRelation.ImageBeforeText };
+            _actionButton.Click += (s, e) =>
             {
                 var args = new ComboActionEventArgs(_searchPanel.Text);
                 ActionClicked?.Invoke(this, args);
@@ -175,7 +186,7 @@ namespace Procont.Utils.Components.ComboSearch
             _root.Controls.Add(_searchPanel);
             _root.Controls.Add(_actionButton);
 
-            _host = new ToolStripControlHost(_root)
+            _host = new ToolStripControlHost(_borderPanel)
             {
                 Margin = Padding.Empty,
                 Padding = Padding.Empty,
@@ -231,8 +242,11 @@ namespace Procont.Utils.Components.ComboSearch
         {
             ActionLabel = label;
             ActionIcon = icon;
-            _actionButton.Label = label;
-            _actionButton.Icon = icon;
+            _actionButton.Text = label;
+            _actionButton.IconChar = icon;
+            _actionButton.IconSize = ComboSearchTheme.IconSize;
+            _actionButton.TextAlign = ContentAlignment.MiddleLeft;
+            _actionButton.ImageAlign = ContentAlignment.MiddleRight;
             _actionButton.Invalidate();
         }
 
@@ -269,7 +283,7 @@ namespace Procont.Utils.Components.ComboSearch
 
             if (_dataSource == null || _dataSource.Count == 0)
             {
-                ShowEmpty(EmptyStateText);
+                ShowEmpty(EmptyStateText.Replace("{action}", ActionLabel));
                 return;
             }
 
@@ -375,17 +389,33 @@ namespace Procont.Utils.Components.ComboSearch
 
         private void SetWidth(int w)
         {
-            _root.Width = w;
-            _searchPanel.Width = w;
-            _scrollPanel.Width = w;
-            _emptyPanel.Width = w;
-            _actionButton.Width = w;
+            //_root.Width = w;
+            //_searchPanel.Width = w;
+            //_scrollPanel.Width = w;
+            //_emptyPanel.Width = w;
+            //_actionButton.Width = w;
+
+            _borderPanel.Width = w;
             _host.Width = w;
             Width = w;
         }
 
         private void RecalcHeight(int itemCount)
         {
+            //int searchH = ComboSearchTheme.SearchInputHeight;
+            //int visible = Math.Min(itemCount, MaxVisible);
+            //int scrollH = visible * ComboSearchTheme.ItemHeight;
+            //int emptyH = _emptyPanel.Visible ? ComboSearchTheme.EmptyStateHeight : 0;
+            //int actionH = ComboSearchTheme.ActionHeight;
+
+            //_scrollPanel.Height = scrollH;
+            //_emptyPanel.Height = emptyH;
+
+            //int totalH = searchH + scrollH + emptyH + actionH;
+            //_root.Height = totalH;
+            //_host.Height = totalH;
+            //Height = totalH;
+
             int searchH = ComboSearchTheme.SearchInputHeight;
             int visible = Math.Min(itemCount, MaxVisible);
             int scrollH = visible * ComboSearchTheme.ItemHeight;
@@ -397,8 +427,9 @@ namespace Procont.Utils.Components.ComboSearch
 
             int totalH = searchH + scrollH + emptyH + actionH;
             _root.Height = totalH;
-            _host.Height = totalH;
-            Height = totalH;
+            _borderPanel.Height = totalH + 2;   // + 2 por el 1px de borde arriba/abajo
+            _host.Height = totalH + 2;
+            Height = totalH + 2;
         }
 
         private void EnsureVisible(Control ctrl)

@@ -84,7 +84,7 @@ namespace Procont.DevSandbox.Pages
                 Width = 280,
                 Anchor = AnchorStyles.Left | AnchorStyles.Top,
                 PlaceholderText = "Buscar cliente...",
-                ActionLabel = "+ Nuevo cliente",
+                ActionLabel = "Nuevo cliente",
                 ActionIcon = IconChar.UserPlus,
                 EmptyStateText = "No encontrado. Usá {action}",
                 Margin = new Padding(0, 36, 0, 0)

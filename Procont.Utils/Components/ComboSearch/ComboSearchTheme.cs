@@ -9,47 +9,54 @@ namespace Procont.Utils.Components.ComboSearch
     internal static class ComboSearchTheme
     {
         // ── Input box (control principal) ─────────────────────────────
-        public static Color InputBackground => ProcontTheme.SurfaceInput;
-        public static Color InputBorder => ProcontTheme.BorderDefault;
-        public static Color InputBorderFocus => ProcontTheme.BorderFocus;
-        public static Color InputText => ProcontTheme.TextPrimary;
-        public static Color InputPlaceholder => ProcontTheme.TextPlaceholder;
-        public static Color ChevronColor => ProcontTheme.TextSubdued;
+        public static Color InputBackground => SystemColors.Window;
+        public static Color InputBorder => SystemColors.ControlDark;
+        public static Color InputBorderFocus => SystemColors.GrayText;
+        public static Color InputText => SystemColors.WindowText;
+        public static Color InputPlaceholder => SystemColors.GrayText;
+        public static Color ChevronColor => SystemColors.ControlDark;
 
         // ── Search input (dentro del dropdown) ────────────────────────
-        public static Color SearchBackground => ProcontTheme.SurfaceInput;
+        public static Color SearchBackground => SystemColors.Window;
 
         // ── Dropdown ──────────────────────────────────────────────────
-        public static Color DropdownBackground => ProcontTheme.SurfacePopup;
-        public static Color DropdownBorder => ProcontTheme.BorderDefault;
-        public static Color ItemBackground => ProcontTheme.SurfacePopup;
-        public static Color ItemHover => ProcontTheme.SurfaceHover;
-        public static Color ItemSelected => ProcontTheme.SurfaceActive;
-        public static Color ItemText => ProcontTheme.TextPrimary;
-        public static Color ItemSubtitle => ProcontTheme.TextSubdued;
-        public static Color ItemIconColor => ProcontTheme.TextSubdued;
-        public static Color ItemIconActive => ProcontTheme.TextAccent;
+        public static Color DropdownBackground => Color.White;
+        public static Color DropdownBorder => Color.Gray;
+        public static Color ItemBackground => SystemColors.Window;
+        public static Color ItemHover => Color.FromArgb(
+            50, SystemColors.Highlight.R,
+                SystemColors.Highlight.G,
+                SystemColors.Highlight.B);
+        public static Color ItemSelected => SystemColors.Highlight;
+        public static Color ItemText => SystemColors.WindowText;
+        public static Color ItemSubtitle => SystemColors.GrayText;
+        public static Color ItemIconColor => SystemColors.GrayText;
+        public static Color ItemIconActive => SystemColors.HighlightText;
 
         // ── Empty state ───────────────────────────────────────────────
-        public static Color EmptyText => ProcontTheme.TextSubdued;
-        public static Color EmptyAccent => ProcontTheme.TextAccent;
+        public static Color EmptyText => SystemColors.GrayText;
+        public static Color EmptyAccent => SystemColors.Highlight;
 
         // ── Action button (sticky) ────────────────────────────────────
-        public static Color ActionBackground => ProcontTheme.SurfaceAction;
-        public static Color ActionBackgroundHover => ProcontTheme.SurfaceActive;
-        public static Color ActionBorderTop => ProcontTheme.BorderDefault;
-        public static Color ActionText => ProcontTheme.TextAccent;
-        public static Color ActionIcon => ProcontTheme.TextAccent;
+        public static Color ActionBackground => SystemColors.Control;
+        public static Color ActionBackgroundHover => SystemColors.ControlLight;
+        public static Color ActionBorderTop => SystemColors.ControlDark;
+        public static Color ActionText => SystemColors.ControlText;
+        public static Color ActionIcon => SystemColors.ControlText;
 
-        // ── Fonts ─────────────────────────────────────────────────────
-        public static Font FontInput => ProcontTheme.FontBase;
-        public static Font FontItem => ProcontTheme.FontBase;
-        public static Font FontSubtitle => ProcontTheme.FontSmall;
-        public static Font FontEmpty => ProcontTheme.FontBase;
-        public static Font FontAction => ProcontTheme.FontBold;
-
+        // ── Fonts (campos estáticos para no allocar en cada llamada) ──
+        public static readonly Font FontInput = SystemFonts.DefaultFont;
+        public static readonly Font FontItem = SystemFonts.DefaultFont;
+        public static readonly Font FontSubtitle = new Font(
+            SystemFonts.DefaultFont.FontFamily,
+            SystemFonts.DefaultFont.SizeInPoints - 0.5f,
+            FontStyle.Regular);
+        public static readonly Font FontEmpty = SystemFonts.DefaultFont;
+        public static readonly Font FontAction = new Font(
+            SystemFonts.DefaultFont,
+            FontStyle.Bold);
         // ── Metrics ───────────────────────────────────────────────────
-        public const int InputHeight = ProcontTheme.HeightInput;    // 36 — control principal
+        public const int InputHeight = 23;    // 36 — control principal
         public const int SearchInputHeight = 38;                          // input dentro del dropdown
         public const int ItemHeight = ProcontTheme.HeightItem;     // 34
         public const int ActionHeight = ProcontTheme.HeightAction;   // 38
@@ -58,6 +65,6 @@ namespace Procont.Utils.Components.ComboSearch
         public const int DropdownRadius = ProcontTheme.RadiusMedium;   // 8
         public const int MaxVisibleItems = 10;
         public const int IconSize = ProcontTheme.IconSizeBase;   // 16
-        public const int PaddingH = 12;
+        public const int PaddingH = 3;
     }
 }

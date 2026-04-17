@@ -424,7 +424,7 @@ namespace Procont.Utils.Components.ComboSearch
         private void OpenDropdown()
         {
             if (_isDropdownOpen) return;
-            if (_dataSource == null) return;
+            //if (_dataSource == null) return;
 
             _isDropdownOpen = true;
 
