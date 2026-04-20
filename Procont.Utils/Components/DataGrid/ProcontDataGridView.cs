@@ -1,5 +1,4 @@
 ﻿using Procont.Utils.Core.Extensions;
-using Procont.Utils.Core.Theming;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,75 +9,66 @@ using System.Windows.Forms;
 namespace Procont.Utils.Components.DataGrid
 {
     /// <summary>
-    /// DataGridView extendido con dos funcionalidades integradas:
+    /// DataGridView con dos capacidades integradas:
     ///
     /// ── 1. GROUPED COLUMN HEADERS ───────────────────────────────────
-    ///   Pinta un nivel de encabezado agrupador ENCIMA de los headers
-    ///   estándar. Soporta spans multi-columna con color propio.
+    ///   Añade un nivel de encabezado agrupador por encima de los headers normales.
     ///
-    ///   CÓDIGO:
-    ///     grid.ColumnGroups.Add(new DataGridColumnGroup
-    ///     {
-    ///         Title           = "Período Actual",
-    ///         BackColor       = Color.FromArgb(20, 245, 168, 30),
-    ///         ColumnNamesText = "colUnits, colPrice, colTotal"
-    ///     });
-    ///     // ApplyColumnGroups() se llama solo; también se puede forzar.
-    ///
-    ///   DISEÑADOR:
-    ///     Properties → ColumnGroups → [...] → Add → establecer Title y ColumnNamesText.
+    ///   grid.ColumnGroups.Add(new DataGridColumnGroup
+    ///   {
+    ///       Title           = "Período Actual",
+    ///       ColumnNamesText = "colEnero, colFebrero, colMarzo"
+    ///   });
+    ///   grid.ApplyColumnGroups();
     ///
     /// ── 2. FOOTER ROWS (integrado) ──────────────────────────────────
-    ///   Las filas de footer se pintan DENTRO del propio DataGridView
-    ///   (vía WM_PAINT + Padding.Bottom). No necesitas añadir ningún
-    ///   control extra al formulario.
+    ///   Las filas de footer se pintan dentro del propio control.
+    ///   No hace falta añadir ningún control hermano.
     ///
-    ///   CÓDIGO:
-    ///     grid.FooterRows.Add(new DataGridFooterRow
-    ///     {
-    ///         Cells =
-    ///         {
-    ///             new DataGridFooterCell { ColumnName = "Importe", Formula = FooterFormula.Sum, Format = "N2" },
-    ///             new DataGridFooterCell { ColumnName = "Descripcion", Text = "TOTAL" }
-    ///         }
-    ///     });
-    ///     grid.RebuildFooter();   // ← llamar después de agregar filas
+    ///   grid.FooterRows.Add(new DataGridFooterRow
+    ///   {
+    ///       Cells =
+    ///       {
+    ///           new DataGridFooterCell { ColumnName = "Importe", Formula = FooterFormula.Sum, Format = "N2" },
+    ///           new DataGridFooterCell { ColumnName = "Label",   Text = "TOTAL" }
+    ///       }
+    ///   });
+    ///   grid.RebuildFooter();
     ///
-    ///   DISEÑADOR:
-    ///     Properties → FooterRows → [...] → Add → configurar celdas.
-    ///     Llamar RebuildFooter() en Form.Load.
-    ///
-    /// ── NOTAS DE INTEGRACIÓN ────────────────────────────────────────
-    ///   • ColumnNamesText usa nombres separados por coma (NO List de strings).
-    ///   • ApplyColumnGroups() se llama automáticamente al agregar columnas.
-    ///   • RebuildFooter() debe llamarse manualmente tras configurar FooterRows.
-    ///   • Invalidate() del grid actualiza los cálculos del footer.
+    /// ── NOTAS ───────────────────────────────────────────────────────
+    ///   • El componente NO aplica estilos propios; el aspecto visual
+    ///     queda completamente en manos del consumidor.
+    ///   • ApplyColumnGroups() se llama automáticamente al añadir/quitar
+    ///     columnas cuando ya hay grupos configurados.
+    ///   • RebuildFooter() debe llamarse tras modificar FooterRows.
+    ///   • Invalidate() recalcula las fórmulas del footer.
     /// </summary>
     [ToolboxItem(true)]
     [Description("DataGridView con cabeceras agrupadas y filas de footer integradas.")]
     public class ProcontDataGridView : System.Windows.Forms.DataGridView
     {
-        // ── Constantes ────────────────────────────────────────────────
-        private const int GroupHeaderHeight = 24;
-        private const int WM_PAINT = 0x000F;
+        // ── Constantes ─────────────────────────────────────────────────
+        private const int WmPaint = 0x000F;
+        private const int DefaultGroupHeaderHeight = 24;
 
-        // ── Column groups ─────────────────────────────────────────────
+        // ── Column groups ──────────────────────────────────────────────
         private readonly List<DataGridColumnGroup> _columnGroups = new List<DataGridColumnGroup>();
         private bool _groupsApplied = false;
+        private int _baseHeaderHeight = DefaultGroupHeaderHeight;
 
-        // ── Footer ────────────────────────────────────────────────────
+        // ── Footer ─────────────────────────────────────────────────────
         private readonly List<DataGridFooterRow> _footerRows = new List<DataGridFooterRow>();
 
-        // ── Visual config ──────────────────────────────────────────────
-        private Color _headerBackColor = Color.Transparent;
-        private Color _groupHeaderBackColor = Color.Transparent;
+        // ── Theming override (opcional) ────────────────────────────────
+        private Color _groupHeaderBackColor = Color.Empty;
+        private Color _columnHeaderBackColor = Color.Empty;
 
         // ══════════════════════════════════════════════════════════════
-        // PROPIEDADES PÚBLICAS
+        // PROPIEDADES
         // ══════════════════════════════════════════════════════════════
 
         [Category("ProcontDataGrid")]
-        [Description("Grupos de columnas. Serializable desde el diseñador — usar ColumnNamesText.")]
+        [Description("Grupos de columnas. Usar ColumnNamesText para listar columnas.")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public List<DataGridColumnGroup> ColumnGroups => _columnGroups;
 
@@ -88,96 +78,69 @@ namespace Procont.Utils.Components.DataGrid
         public List<DataGridFooterRow> FooterRows => _footerRows;
 
         [Category("ProcontDataGrid — Theming")]
-        [Description("Fondo de header de columna. Transparent = ProcontTheme.SurfaceActive.")]
-        public Color HeaderBackColor
-        {
-            get => _headerBackColor;
-            set { _headerBackColor = value; Invalidate(); }
-        }
-
-        [Category("ProcontDataGrid — Theming")]
-        [Description("Fondo del header de grupo. Transparent = ProcontTheme.SurfaceHover.")]
+        [Description("Fondo del header de grupo. Empty = SystemColors.ControlDark.")]
         public Color GroupHeaderBackColor
         {
             get => _groupHeaderBackColor;
             set { _groupHeaderBackColor = value; Invalidate(); }
         }
 
-        // ── Colores resueltos ─────────────────────────────────────────
-        private Color ResolvedHeaderBg =>
-            _headerBackColor == Color.Transparent ? ProcontTheme.SurfaceActive : _headerBackColor;
+        [Category("ProcontDataGrid — Theming")]
+        [Description("Fondo del header de columna (mitad inferior). Empty = SystemColors.Control.")]
+        public Color ColumnHeaderBackColor
+        {
+            get => _columnHeaderBackColor;
+            set { _columnHeaderBackColor = value; Invalidate(); }
+        }
 
         private Color ResolvedGroupHeaderBg =>
-            _groupHeaderBackColor == Color.Transparent ? ProcontTheme.SurfaceHover : _groupHeaderBackColor;
+            _groupHeaderBackColor == Color.Empty
+                ? SystemColors.ControlDark
+                : _groupHeaderBackColor;
 
-        // ── Alto total de footer ──────────────────────────────────────
+        private Color ResolvedColumnHeaderBg =>
+            _columnHeaderBackColor == Color.Empty
+                ? SystemColors.Control
+                : _columnHeaderBackColor;
+
+        // ── Alto total del footer ──────────────────────────────────────
         private int FooterTotalHeight
         {
-            get
-            {
-                int h = 0;
-                foreach (var r in _footerRows) h += r.Height;
-                return h;
-            }
+            get { int h = 0; foreach (var r in _footerRows) h += r.Height; return h; }
         }
 
         // ══════════════════════════════════════════════════════════════
-        // CONSTRUCTOR
+        // CONSTRUCTOR — solo lo estructuralmente necesario
         // ══════════════════════════════════════════════════════════════
 
         public ProcontDataGridView()
         {
-            // CRÍTICO: sin esto, setear ColumnHeadersHeight lanza excepción
+            // OBLIGATORIO: sin esto, asignar ColumnHeadersHeight lanza excepción
             ColumnHeadersHeightSizeMode =
                 DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
 
-            // Theming base
-            BackgroundColor = ProcontTheme.SurfaceDark;
-            GridColor = ProcontTheme.BorderDefault;
-            BorderStyle = BorderStyle.None;
-
-            RowHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-            ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.None;
-
-            ColumnHeadersDefaultCellStyle.BackColor = ProcontTheme.SurfaceActive;
-            ColumnHeadersDefaultCellStyle.ForeColor = ProcontTheme.TextPrimary;
-            ColumnHeadersDefaultCellStyle.Font = ProcontTheme.FontBold;
-            ColumnHeadersDefaultCellStyle.SelectionBackColor = ProcontTheme.SurfaceActive;
-            ColumnHeadersDefaultCellStyle.SelectionForeColor = ProcontTheme.TextPrimary;
-            ColumnHeadersDefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleCenter;
-
-            RowsDefaultCellStyle.BackColor = ProcontTheme.SurfaceDark;
-            RowsDefaultCellStyle.ForeColor = ProcontTheme.TextPrimary;
-            RowsDefaultCellStyle.Font = ProcontTheme.FontBase;
-            RowsDefaultCellStyle.SelectionBackColor = ProcontTheme.SurfaceHover;
-            RowsDefaultCellStyle.SelectionForeColor = ProcontTheme.TextPrimary;
-
-            AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(6, 44, 62);
-            AlternatingRowsDefaultCellStyle.ForeColor = ProcontTheme.TextPrimary;
-            AlternatingRowsDefaultCellStyle.SelectionBackColor = ProcontTheme.SurfaceHover;
-            AlternatingRowsDefaultCellStyle.SelectionForeColor = ProcontTheme.TextPrimary;
-
-            RowHeadersDefaultCellStyle.BackColor = ProcontTheme.SurfaceActive;
-            RowHeadersDefaultCellStyle.ForeColor = ProcontTheme.TextSubdued;
-
+            // OBLIGATORIO: sin esto, visual styles anulan OnCellPainting en headers
             EnableHeadersVisualStyles = false;
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            RowHeadersWidth = 20;
+
             DoubleBuffered = true;
+
+            // Re-pintar footer cuando el DGV hace scroll vertical
+            Scroll += OnInternalScroll;
         }
 
         // ══════════════════════════════════════════════════════════════
-        // COLUMN GROUPS — setup y aplicación automática
+        // COLUMN GROUPS — setup
         // ══════════════════════════════════════════════════════════════
 
         /// <summary>
         /// Dobla la altura del header para acomodar la fila de grupo.
-        /// Se llama automáticamente al agregar/quitar columnas.
-        /// Puede llamarse explícitamente si se configuran grupos en Form.Load.
+        /// Llamar tras agregar o modificar ColumnGroups.
+        /// También se llama automáticamente al agregar/quitar columnas
+        /// cuando ya hay grupos configurados.
         /// </summary>
         public void ApplyColumnGroups()
         {
-            // Garantizar que el modo permita cambiar la altura
+            // Garantizar modo manual (por si el diseñador lo cambió)
             if (ColumnHeadersHeightSizeMode != DataGridViewColumnHeadersHeightSizeMode.DisableResizing)
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
 
@@ -185,14 +148,18 @@ namespace Procont.Utils.Components.DataGrid
             {
                 if (_groupsApplied)
                 {
-                    ColumnHeadersHeight = GroupHeaderHeight;
+                    ColumnHeadersHeight = _baseHeaderHeight;
                     _groupsApplied = false;
                     Invalidate();
                 }
                 return;
             }
 
-            int targetH = GroupHeaderHeight * 2;
+            // Guardar la altura base la primera vez que se aplican grupos
+            if (!_groupsApplied)
+                _baseHeaderHeight = Math.Max(DefaultGroupHeaderHeight, ColumnHeadersHeight);
+
+            int targetH = _baseHeaderHeight * 2;
             if (ColumnHeadersHeight != targetH)
                 ColumnHeadersHeight = targetH;
 
@@ -200,7 +167,6 @@ namespace Procont.Utils.Components.DataGrid
             Invalidate();
         }
 
-        // Auto-apply cuando cambia la estructura de columnas
         protected override void OnColumnAdded(DataGridViewColumnEventArgs e)
         {
             base.OnColumnAdded(e);
@@ -214,90 +180,92 @@ namespace Procont.Utils.Components.DataGrid
         }
 
         // ══════════════════════════════════════════════════════════════
-        // FOOTER — configuración
+        // FOOTER — setup
         // ══════════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Recalcula el espacio reservado para el footer (Padding.Bottom)
-        /// y fuerza un repintado. Llamar después de modificar FooterRows.
+        /// Reserva espacio (Padding.Bottom) para el footer y fuerza repintado.
+        /// Llamar tras modificar FooterRows.
         /// </summary>
         public void RebuildFooter()
         {
             int fh = FooterTotalHeight;
-            // Padding.Bottom reserva espacio vacío al fondo del DGV
-            // → las filas de datos no invaden esa área
-            // → WM_PAINT pinta el footer allí
             var p = Padding;
             if (p.Bottom != fh)
                 Padding = new Padding(p.Left, p.Top, p.Right, fh);
             Invalidate();
         }
 
-        // ══════════════════════════════════════════════════════════════
-        // FOOTER — fábrica externa (compatibilidad hacia atrás)
-        // ══════════════════════════════════════════════════════════════
-
         /// <summary>
         /// [Compatibilidad] Crea un DataGridFooterBar externo pre-conectado.
-        /// Para el uso integrado (recomendado), usar FooterRows + RebuildFooter().
+        /// Para uso integrado (recomendado) usar FooterRows + RebuildFooter().
         /// </summary>
         public DataGridFooterBar CreateFooterBar() => new DataGridFooterBar(this);
 
         // ══════════════════════════════════════════════════════════════
-        // WM_PAINT — pintado del footer
+        // FOOTER — scroll repaint
+        // ══════════════════════════════════════════════════════════════
+
+        private void OnInternalScroll(object sender, ScrollEventArgs e)
+        {
+            InvalidateFooterStrip();
+        }
+
+        private void InvalidateFooterStrip()
+        {
+            int fh = FooterTotalHeight;
+            if (fh <= 0) return;
+            Invalidate(new Rectangle(0, ClientSize.Height - fh, ClientSize.Width, fh));
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // FOOTER — pintado via WndProc (después del base paint)
         // ══════════════════════════════════════════════════════════════
 
         protected override void WndProc(ref Message m)
         {
             base.WndProc(ref m);
 
-            if (m.Msg != WM_PAINT) return;
+            if (m.Msg != WmPaint) return;
             int fh = FooterTotalHeight;
             if (fh <= 0 || _footerRows.Count == 0) return;
 
-            // Pintar sobre el área reservada por Padding.Bottom
+            // Graphics.FromHwnd llama GetDC — válido después del BeginPaint/EndPaint del base
             using (var g = Graphics.FromHwnd(Handle))
             {
                 g.SetHighQuality();
                 int footerTop = ClientSize.Height - fh;
-                PaintFooterRows(g, footerTop);
-            }
-        }
 
-        // ══════════════════════════════════════════════════════════════
-        // FOOTER — pintado interno
-        // ══════════════════════════════════════════════════════════════
+                // Línea separadora superior
+                using (var pen = new Pen(SystemColors.ControlDark, 1))
+                    g.DrawLine(pen, 0, footerTop, ClientSize.Width, footerTop);
 
-        private void PaintFooterRows(Graphics g, int startY)
-        {
-            // Línea separadora superior
-            using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                g.DrawLine(pen, 0, startY, Width, startY);
-
-            int rowY = startY + 1;
-            foreach (var row in _footerRows)
-            {
-                PaintFooterRow(g, row, rowY);
-                rowY += row.Height;
+                int rowY = footerTop + 1;
+                foreach (var row in _footerRows)
+                {
+                    PaintFooterRow(g, row, rowY);
+                    rowY += row.Height;
+                }
             }
         }
 
         private void PaintFooterRow(Graphics g, DataGridFooterRow row, int y)
         {
-            int rowH = row.Height;
-
-            // Fondo
-            Color bg = row.BackColor == Color.Transparent
-                ? ProcontTheme.SurfaceActive
+            Color bg = row.BackColor == Color.Empty
+                ? SystemColors.ControlDark
                 : row.BackColor;
-            using (var fill = new SolidBrush(bg))
-                g.FillRectangle(fill, 0, y, Width, rowH - 1);
 
-            // Línea inferior
-            using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                g.DrawLine(pen, 0, y + rowH - 1, Width, y + rowH - 1);
+            g.FillRectangle(SystemBrushes.ControlDark,
+                new Rectangle(0, y, ClientSize.Width, row.Height - 1));
 
-            // Celdas
+            if (row.BackColor != Color.Empty)
+                using (var fill = new SolidBrush(row.BackColor))
+                    g.FillRectangle(fill, 0, y, ClientSize.Width, row.Height - 1);
+
+            // Línea inferior de fila
+            using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
+                g.DrawLine(pen, 0, y + row.Height - 1, ClientSize.Width, y + row.Height - 1);
+
             foreach (var cell in row.Cells)
             {
                 if (string.IsNullOrEmpty(cell.ColumnName)) continue;
@@ -305,32 +273,34 @@ namespace Procont.Utils.Components.DataGrid
                 var col = Columns[cell.ColumnName];
                 if (col == null || !col.Visible) continue;
 
-                // GetColumnDisplayRectangle devuelve coords en client area del DGV,
-                // ya incluye offset del row header y el scroll horizontal actual.
+                // GetColumnDisplayRectangle devuelve coords en el client area del DGV
+                // — ya incluye offset de row-header y scroll horizontal actual
                 var colRect = GetColumnDisplayRectangle(col.Index, false);
-                if (colRect.IsEmpty) continue; // columna fuera de la vista
+                if (colRect.IsEmpty) continue;
 
-                var cellRect = new Rectangle(colRect.X, y, colRect.Width - 1, rowH - 1);
-
-                // Calcular valor
+                var cellRect = new Rectangle(colRect.X, y, colRect.Width - 1, row.Height - 1);
                 string text = ComputeFooterCellValue(cell, col);
 
-                // Tipografía y color
-                var font = cell.Bold ? ProcontTheme.FontBold : ProcontTheme.FontBase;
-                Color fg = cell.ForeColor == Color.Transparent
-                    ? ProcontTheme.TextPrimary
+                var font = cell.Bold
+                    ? new Font(Font, FontStyle.Bold)
+                    : Font;
+
+                Color fg = cell.ForeColor == Color.Empty
+                    ? SystemColors.ControlText
                     : cell.ForeColor;
 
-                // Texto
                 using (var fmt = BuildStringFormat(cell.Alignment))
                 using (var brush = new SolidBrush(fg))
+                {
                     g.DrawString(text, font, brush,
                         new RectangleF(cellRect.X + 4, cellRect.Y, cellRect.Width - 8, cellRect.Height),
                         fmt);
+                }
 
-                // Borde derecho de celda
-                using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                    g.DrawLine(pen, cellRect.Right, y, cellRect.Right, y + rowH - 1);
+                if (cell.Bold) font.Dispose();
+
+                using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
+                    g.DrawLine(pen, cellRect.Right, y, cellRect.Right, y + row.Height - 1);
             }
         }
 
@@ -343,47 +313,33 @@ namespace Procont.Utils.Components.DataGrid
             if (cell.Formula == FooterFormula.Custom)
                 return cell.Text ?? "";
 
-            var values = new List<double>();
+            double result = 0;
+            int count = 0;
+
             foreach (DataGridViewRow row in Rows)
             {
                 if (row.IsNewRow) continue;
                 var v = row.Cells[col.Index].Value;
                 if (v == null || v == DBNull.Value) continue;
-                if (double.TryParse(v.ToString(), out double d))
-                    values.Add(d);
+                if (!double.TryParse(v.ToString(), out double d)) continue;
+
+                count++;
+                switch (cell.Formula)
+                {
+                    case FooterFormula.Sum: result += d; break;
+                    case FooterFormula.Average: result += d; break;
+                    case FooterFormula.Count: result = count; break;
+                    case FooterFormula.Min:
+                        result = count == 1 ? d : Math.Min(result, d); break;
+                    case FooterFormula.Max:
+                        result = count == 1 ? d : Math.Max(result, d); break;
+                }
             }
 
-            double result = 0;
-            switch (cell.Formula)
-            {
-                case FooterFormula.Sum:
-                    foreach (var v in values) result += v;
-                    break;
-                case FooterFormula.Average:
-                    if (values.Count > 0)
-                    {
-                        foreach (var v in values) result += v;
-                        result /= values.Count;
-                    }
-                    break;
-                case FooterFormula.Count:
-                    result = values.Count;
-                    break;
-                case FooterFormula.Min:
-                    if (values.Count > 0)
-                    {
-                        result = double.MaxValue;
-                        foreach (var v in values) if (v < result) result = v;
-                    }
-                    break;
-                case FooterFormula.Max:
-                    if (values.Count > 0)
-                    {
-                        result = double.MinValue;
-                        foreach (var v in values) if (v > result) result = v;
-                    }
-                    break;
-            }
+            if (cell.Formula == FooterFormula.Average && count > 0)
+                result /= count;
+            if (cell.Formula == FooterFormula.Count)
+                result = count;
 
             string formatted = string.IsNullOrEmpty(cell.Format)
                 ? result.ToString()
@@ -395,11 +351,12 @@ namespace Procont.Utils.Components.DataGrid
         }
 
         // ══════════════════════════════════════════════════════════════
-        // COLUMN GROUPS — pintado (OnCellPainting)
+        // COLUMN GROUPS — pintado
         // ══════════════════════════════════════════════════════════════
 
         protected override void OnCellPainting(DataGridViewCellPaintingEventArgs e)
         {
+            // Interceptar solo header cells cuando hay grupos activos
             if (e.RowIndex != -1 || e.ColumnIndex < 0 || !_groupsApplied)
             {
                 base.OnCellPainting(e);
@@ -417,43 +374,51 @@ namespace Procont.Utils.Components.DataGrid
             int by = e.CellBounds.Y;
             int bw = e.CellBounds.Width;
 
-            // Mitad inferior — nombre de columna
-            PaintColumnHeaderCell(g,
+            // ── Mitad inferior: nombre de columna ────────────────────
+            PaintColumnNameCell(g,
                 new Rectangle(bx, by + groupH, bw, colH),
                 e.Value?.ToString() ?? "",
                 e.ColumnIndex);
 
-            // Mitad superior — grupo
+            // ── Mitad superior: zona de grupo ────────────────────────
             var topRect = new Rectangle(bx, by, bw, groupH);
             var group = FindGroupForColumn(e.ColumnIndex);
 
             if (group != null)
             {
-                Color groupBg = group.BackColor == Color.Transparent
+                Color groupBg = group.BackColor == Color.Empty
                     ? ResolvedGroupHeaderBg
-                    : BlendColor(ProcontTheme.SurfaceDark, group.BackColor, 0.85f);
+                    : group.BackColor;
 
+                // Siempre rellenar la porción de esta columna
                 using (var fill = new SolidBrush(groupBg))
                     g.FillRectangle(fill, topRect);
 
-                // Borde vertical entre columnas del mismo grupo (excepto la última)
-                if (!IsLastColumnInGroup(e.ColumnIndex, group))
-                    using (var pen = new Pen(Color.FromArgb(30, ProcontTheme.BorderDefault), 1))
-                        g.DrawLine(pen, topRect.Right - 1, topRect.Y + 3, topRect.Right - 1, topRect.Bottom - 3);
+                // Borde derecho suave entre columnas del mismo grupo (no en la última)
+                if (!IsLastInGroup(e.ColumnIndex, group))
+                {
+                    using (var pen = new Pen(Color.FromArgb(60, SystemColors.ControlDarkDark), 1))
+                        g.DrawLine(pen, topRect.Right - 1, topRect.Y + 3,
+                                        topRect.Right - 1, topRect.Bottom - 3);
+                }
 
-                // Título del grupo: se pinta UNA sola vez desde la primera columna visible
-                if (IsFirstColumnInGroup(e.ColumnIndex, group))
+                // ── CLAVE: pintar el título del span desde la ÚLTIMA columna del grupo.
+                // De esta forma ninguna celda posterior sobrescribe el texto ya pintado.
+                if (IsLastInGroup(e.ColumnIndex, group))
                 {
                     var spanRect = ComputeGroupSpanRect(group, by, groupH);
                     if (!spanRect.IsEmpty)
                     {
+                        // ResetClip permite pintar cruzando los límites de celdas individuales
                         var savedClip = g.Clip.Clone();
-                        g.ResetClip(); // Necesario para pintar cruzando los clips de celdas
+                        g.ResetClip();
 
+                        // Re-rellenar el span completo (cubre porcionces de columnas anteriores)
                         using (var fill = new SolidBrush(groupBg))
                             g.FillRectangle(fill, spanRect);
 
-                        using (var b = new SolidBrush(ProcontTheme.TextAccent))
+                        // Texto del grupo
+                        using (var brush = new SolidBrush(SystemColors.ControlText))
                         using (var fmt = new StringFormat
                         {
                             Alignment = StringAlignment.Center,
@@ -461,15 +426,19 @@ namespace Procont.Utils.Components.DataGrid
                             Trimming = StringTrimming.EllipsisCharacter,
                             FormatFlags = StringFormatFlags.NoWrap
                         })
-                            g.DrawString(group.Title, ProcontTheme.FontBold, b, spanRect, fmt);
+                            g.DrawString(group.Title, Font, brush, spanRect, fmt);
 
                         // Borde inferior del span
-                        using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                            g.DrawLine(pen, spanRect.X, spanRect.Bottom - 1, spanRect.Right, spanRect.Bottom - 1);
+                        using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
+                            g.DrawLine(pen,
+                                spanRect.X, spanRect.Bottom - 1,
+                                spanRect.Right, spanRect.Bottom - 1);
 
                         // Borde derecho del span
-                        using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                            g.DrawLine(pen, spanRect.Right - 1, spanRect.Y, spanRect.Right - 1, spanRect.Bottom);
+                        using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
+                            g.DrawLine(pen,
+                                spanRect.Right - 1, spanRect.Y,
+                                spanRect.Right - 1, spanRect.Bottom);
 
                         g.Clip = savedClip;
                     }
@@ -477,21 +446,22 @@ namespace Procont.Utils.Components.DataGrid
             }
             else
             {
-                // Columna sin grupo — top plain
+                // Columna sin grupo: rellenar mitad superior con color de grupo
                 using (var fill = new SolidBrush(ResolvedGroupHeaderBg))
                     g.FillRectangle(fill, topRect);
 
-                using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                    g.DrawLine(pen, topRect.Right - 1, topRect.Y, topRect.Right - 1, topRect.Bottom);
+                using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
+                    g.DrawLine(pen, topRect.Right - 1, topRect.Y,
+                                    topRect.Right - 1, topRect.Bottom);
             }
         }
 
-        private void PaintColumnHeaderCell(Graphics g, Rectangle rect, string text, int colIndex)
+        private void PaintColumnNameCell(Graphics g, Rectangle rect, string text, int colIndex)
         {
-            using (var fill = new SolidBrush(ResolvedHeaderBg))
+            using (var fill = new SolidBrush(ResolvedColumnHeaderBg))
                 g.FillRectangle(fill, rect);
 
-            using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
+            using (var pen = new Pen(SystemColors.ControlDarkDark, 1))
             {
                 g.DrawLine(pen, rect.Right - 1, rect.Y, rect.Right - 1, rect.Bottom);
                 g.DrawLine(pen, rect.X, rect.Bottom - 1, rect.Right, rect.Bottom - 1);
@@ -499,8 +469,9 @@ namespace Procont.Utils.Components.DataGrid
 
             var col = Columns[colIndex];
             bool sorted = col.HeaderCell.SortGlyphDirection != SortOrder.None;
+            float rightPad = sorted ? 20 : 6;
 
-            using (var b = new SolidBrush(ProcontTheme.TextPrimary))
+            using (var b = new SolidBrush(SystemColors.ControlText))
             using (var fmt = new StringFormat
             {
                 Alignment = sorted ? StringAlignment.Near : StringAlignment.Center,
@@ -508,15 +479,16 @@ namespace Procont.Utils.Components.DataGrid
                 Trimming = StringTrimming.EllipsisCharacter,
                 FormatFlags = StringFormatFlags.NoWrap
             })
-                g.DrawString(text, ProcontTheme.FontBold, b,
-                    new RectangleF(rect.X + 4, rect.Y, rect.Width - 20, rect.Height), fmt);
+                g.DrawString(text, Font, b,
+                    new RectangleF(rect.X + 4, rect.Y, rect.Width - rightPad, rect.Height),
+                    fmt);
 
             if (sorted)
             {
                 int ax = rect.Right - 14;
                 int ay = rect.Y + rect.Height / 2 - 3;
                 bool asc = col.HeaderCell.SortGlyphDirection == SortOrder.Ascending;
-                using (var pen = new Pen(ProcontTheme.TextSubdued, 1.5f)
+                using (var pen = new Pen(SystemColors.GrayText, 1.5f)
                 { StartCap = LineCap.Round, EndCap = LineCap.Round })
                 {
                     if (asc)
@@ -534,44 +506,23 @@ namespace Procont.Utils.Components.DataGrid
         }
 
         // ══════════════════════════════════════════════════════════════
-        // ROW PAINTING — borde inferior por fila
-        // ══════════════════════════════════════════════════════════════
-
-        protected override void OnRowPostPaint(DataGridViewRowPostPaintEventArgs e)
-        {
-            base.OnRowPostPaint(e);
-            using (var pen = new Pen(ProcontTheme.BorderDefault, 1))
-                e.Graphics.DrawLine(pen,
-                    e.RowBounds.Left, e.RowBounds.Bottom - 1,
-                    e.RowBounds.Right, e.RowBounds.Bottom - 1);
-        }
-
-        // ══════════════════════════════════════════════════════════════
-        // HELPERS — column group lookup
+        // HELPERS — group lookup
         // ══════════════════════════════════════════════════════════════
 
         private DataGridColumnGroup FindGroupForColumn(int colIndex)
         {
             if (colIndex < 0 || colIndex >= Columns.Count) return null;
             string name = Columns[colIndex].Name;
-            foreach (var g in _columnGroups)
-                if (g.ColumnNames.Contains(name)) return g;
+            foreach (var grp in _columnGroups)
+                if (grp.ColumnNames.Contains(name)) return grp;
             return null;
         }
 
-        private bool IsFirstColumnInGroup(int colIndex, DataGridColumnGroup group)
-        {
-            int minDi = int.MaxValue, firstIdx = -1;
-            foreach (var name in group.ColumnNames)
-            {
-                var col = Columns[name];
-                if (col == null || !col.Visible) continue;
-                if (col.DisplayIndex < minDi) { minDi = col.DisplayIndex; firstIdx = col.Index; }
-            }
-            return firstIdx == colIndex;
-        }
-
-        private bool IsLastColumnInGroup(int colIndex, DataGridColumnGroup group)
+        /// <summary>
+        /// Devuelve true si colIndex es la columna con mayor DisplayIndex visible del grupo.
+        /// Se usa para disparar el pintado del span (nada pinta encima después).
+        /// </summary>
+        private bool IsLastInGroup(int colIndex, DataGridColumnGroup group)
         {
             int maxDi = int.MinValue, lastIdx = -1;
             foreach (var name in group.ColumnNames)
@@ -583,6 +534,13 @@ namespace Procont.Utils.Components.DataGrid
             return lastIdx == colIndex;
         }
 
+        private bool IsLastColumnInGroup(int colIndex, DataGridColumnGroup group)
+            => IsLastInGroup(colIndex, group);
+
+        /// <summary>
+        /// Calcula el rectángulo que cubre todas las columnas visibles del grupo,
+        /// en coordenadas client del DGV.
+        /// </summary>
         private Rectangle ComputeGroupSpanRect(DataGridColumnGroup group, int y, int height)
         {
             int minX = int.MaxValue, maxRight = int.MinValue;
@@ -601,19 +559,10 @@ namespace Procont.Utils.Components.DataGrid
         }
 
         // ══════════════════════════════════════════════════════════════
-        // HELPERS — utilidades
+        // HELPERS — StringFormat
         // ══════════════════════════════════════════════════════════════
 
-        private static Color BlendColor(Color base_, Color over, float alpha)
-        {
-            float ba = 1f - alpha;
-            return Color.FromArgb(
-                (int)(base_.R * ba + over.R * alpha),
-                (int)(base_.G * ba + over.G * alpha),
-                (int)(base_.B * ba + over.B * alpha));
-        }
-
-        private static StringFormat BuildStringFormat(ContentAlignment alignment)
+        private static StringFormat BuildStringFormat(ContentAlignment a)
         {
             var fmt = new StringFormat
             {
@@ -621,7 +570,7 @@ namespace Procont.Utils.Components.DataGrid
                 FormatFlags = StringFormatFlags.NoWrap
             };
 
-            switch (alignment)
+            switch (a)
             {
                 case ContentAlignment.TopLeft:
                 case ContentAlignment.MiddleLeft:
@@ -635,7 +584,7 @@ namespace Procont.Utils.Components.DataGrid
                     fmt.Alignment = StringAlignment.Far; break;
             }
 
-            switch (alignment)
+            switch (a)
             {
                 case ContentAlignment.TopLeft:
                 case ContentAlignment.TopCenter:

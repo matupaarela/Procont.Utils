@@ -9,24 +9,21 @@ namespace Procont.Utils.Components.DataGrid
     // ══════════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// Define el label agrupador que se pinta encima de un conjunto de columnas
-    /// en un <see cref="ProcontDataGridView"/>.
+    /// Define el label agrupador que se pinta encima de un conjunto de columnas.
     ///
     /// ── USO EN CÓDIGO ───────────────────────────────────────────────
     ///   grid.ColumnGroups.Add(new DataGridColumnGroup
     ///   {
     ///       Title           = "Período actual",
-    ///       BackColor       = Color.FromArgb(10, 245, 168, 30),
     ///       ColumnNamesText = "colUnits, colPrice, colTotal"
     ///   });
     ///   grid.ApplyColumnGroups();
     ///
     /// ── USO EN DISEÑADOR ────────────────────────────────────────────
-    ///   Properties → ColumnGroups → [...]
-    ///   Establece ColumnNamesText con los nombres de columna separados por coma.
+    ///   Properties → ColumnGroups → [...] → establecer Title + ColumnNamesText.
     ///
-    /// NOTA: NO usar List&lt;string&gt; en el diseñador — string no tiene ctor vacío
-    ///       y el CollectionEditor lanza excepción. Usar ColumnNamesText (string).
+    /// NOTA: ColumnNamesText usa string CSV (no List&lt;string&gt;) porque
+    ///       el CollectionEditor del diseñador no puede instanciar string.
     /// </summary>
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class DataGridColumnGroup
@@ -39,16 +36,16 @@ namespace Procont.Utils.Components.DataGrid
         public string Title { get; set; } = "";
 
         [Category("ColumnGroup")]
-        [Description("Fondo del header del grupo. Transparent = color por defecto.")]
-        public Color BackColor { get; set; } = Color.Transparent;
+        [Description("Color de fondo del header del grupo. Empty = SystemColors.ControlDark.")]
+        public Color BackColor { get; set; } = Color.Empty;
 
         /// <summary>
-        /// Nombres de columna separados por coma.
-        /// Usar en el diseñador en lugar de ColumnNames.
+        /// Nombres de columna (DataGridViewColumn.Name) separados por coma.
+        /// Se usa tanto en código como en el diseñador.
         /// Ejemplo: "Column1, Column2, Column3"
         /// </summary>
         [Category("ColumnGroup")]
-        [Description("Nombres de columna (DataGridViewColumn.Name) separados por coma.")]
+        [Description("Nombres de columna separados por coma. Ej: \"Column1, Column2, Column3\"")]
         [DefaultValue("")]
         public string ColumnNamesText
         {
@@ -67,8 +64,7 @@ namespace Procont.Utils.Components.DataGrid
         }
 
         /// <summary>
-        /// Lista parseada desde <see cref="ColumnNamesText"/>.
-        /// Usar en código. En el diseñador usar ColumnNamesText.
+        /// Lista parseada de ColumnNamesText. Solo lectura; no se usa en el diseñador.
         /// </summary>
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -85,23 +81,12 @@ namespace Procont.Utils.Components.DataGrid
     /// <summary>Fórmula de agregación de una celda de footer.</summary>
     public enum FooterFormula
     {
-        [Description("Muestra un texto fijo.")]
-        Custom,
-
-        [Description("Suma de valores numéricos de la columna.")]
-        Sum,
-
-        [Description("Promedio de valores numéricos.")]
-        Average,
-
-        [Description("Cantidad de celdas no vacías.")]
-        Count,
-
-        [Description("Valor numérico mínimo.")]
-        Min,
-
-        [Description("Valor numérico máximo.")]
-        Max
+        [Description("Muestra un texto fijo.")] Custom,
+        [Description("Suma de valores numéricos.")] Sum,
+        [Description("Promedio de valores numéricos.")] Average,
+        [Description("Cantidad de celdas no vacías.")] Count,
+        [Description("Valor mínimo.")] Min,
+        [Description("Valor máximo.")] Max
     }
 
     /// <summary>
@@ -116,12 +101,12 @@ namespace Procont.Utils.Components.DataGrid
         public string ColumnName { get; set; } = "";
 
         [Category("FooterCell")]
-        [Description("Cómo se calcula el valor.")]
+        [Description("Cómo se calcula el valor de la celda.")]
         [DefaultValue(FooterFormula.Custom)]
         public FooterFormula Formula { get; set; } = FooterFormula.Custom;
 
         [Category("FooterCell")]
-        [Description("Texto fijo (Formula = Custom) o prefijo de etiqueta para otras fórmulas.")]
+        [Description("Texto fijo (Formula=Custom) o prefijo para otras fórmulas.")]
         [DefaultValue("")]
         public string Text { get; set; } = "";
 
@@ -131,13 +116,13 @@ namespace Procont.Utils.Components.DataGrid
         public string Format { get; set; } = "";
 
         [Category("FooterCell")]
-        [Description("Alineación del texto dentro de la celda.")]
+        [Description("Alineación del texto.")]
         [DefaultValue(ContentAlignment.MiddleRight)]
         public ContentAlignment Alignment { get; set; } = ContentAlignment.MiddleRight;
 
         [Category("FooterCell")]
-        [Description("Color de primer plano. Transparent = ProcontTheme.TextPrimary.")]
-        public Color ForeColor { get; set; } = Color.Transparent;
+        [Description("Color de primer plano. Empty = SystemColors.ControlText.")]
+        public Color ForeColor { get; set; } = Color.Empty;
 
         [Category("FooterCell")]
         [Description("Texto en negrita.")]
@@ -146,20 +131,19 @@ namespace Procont.Utils.Components.DataGrid
     }
 
     /// <summary>
-    /// Fila de footer en un <see cref="ProcontDataGridView"/>.
-    /// Agrega una o más filas para mostrar totales, promedios, etc.
+    /// Fila de footer. Agrega una o más a FooterRows y llama RebuildFooter().
     /// </summary>
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class DataGridFooterRow
     {
         [Category("FooterRow")]
         [Description("Alto de fila en píxeles.")]
-        [DefaultValue(32)]
-        public int Height { get; set; } = 32;
+        [DefaultValue(28)]
+        public int Height { get; set; } = 28;
 
         [Category("FooterRow")]
-        [Description("Fondo. Transparent = SurfaceActive.")]
-        public Color BackColor { get; set; } = Color.Transparent;
+        [Description("Fondo. Empty = SystemColors.ControlDark.")]
+        public Color BackColor { get; set; } = Color.Empty;
 
         [Category("FooterRow")]
         [Description("Celdas de esta fila, una por columna.")]

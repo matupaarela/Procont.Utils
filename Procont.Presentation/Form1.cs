@@ -70,49 +70,48 @@ namespace Procont.Presentation
             grid.ColumnGroups.Add(new DataGridColumnGroup
             {
                 Title = "Período anual",
-                BackColor = Color.FromArgb(15, 245, 168, 30),  // tinte ámbar sutil
-                ColumnNamesText = "Enero, Febrero, Marzo"             // ← nombres exactos de columna
+                //BackColor = Color.FromArgb(15, 245, 168, 30),  // tinte ámbar sutil
+                ColumnNamesText = "Enero, Febrero, Marzo"      // ← nombres exactos de columna
             });
             grid.ApplyColumnGroups();  // explícito tras agregar grupos en Load
 
             // ── Footer integrado ──────────────────────────────────────────────
             grid.FooterRows.Add(new DataGridFooterRow
             {
-                Cells =
-        {
-            new DataGridFooterCell
-            {
-                ColumnName = "Descripcion",
-                Formula    = FooterFormula.Custom,
-                Text       = "TOTAL",
-                Alignment  = ContentAlignment.MiddleLeft
-            },
-            new DataGridFooterCell
-            {
-                ColumnName = "Enero",
-                Formula    = FooterFormula.Sum,
-                Format     = "N2"
-            },
-            new DataGridFooterCell
-            {
-                ColumnName = "Febrero",
-                Formula    = FooterFormula.Sum,
-                Format     = "N2"
-            },
-            new DataGridFooterCell
-            {
-                ColumnName = "Marzo",
-                Formula    = FooterFormula.Sum,
-                Format     = "N2"
-            },
-            new DataGridFooterCell
-            {
-                ColumnName = "Total",
-                Formula    = FooterFormula.Sum,
-                Format     = "N2",
-                ForeColor  = ProcontTheme.TextAccent
-            }
-        }
+                Cells = {
+                    new DataGridFooterCell
+                    {
+                        ColumnName = "Descripcion",
+                        Formula    = FooterFormula.Custom,
+                        Text       = "TOTAL",
+                        Alignment  = ContentAlignment.MiddleLeft
+                    },
+                    new DataGridFooterCell
+                    {
+                        ColumnName = "Enero",
+                        Formula    = FooterFormula.Sum,
+                        Format     = "N2"
+                    },
+                    new DataGridFooterCell
+                    {
+                        ColumnName = "Febrero",
+                        Formula    = FooterFormula.Sum,
+                        Format     = "N2"
+                    },
+                    new DataGridFooterCell
+                    {
+                        ColumnName = "Marzo",
+                        Formula    = FooterFormula.Sum,
+                        Format     = "N2"
+                    },
+                    new DataGridFooterCell
+                    {
+                        ColumnName = "Total",
+                        Formula    = FooterFormula.Sum,
+                        Format     = "N2",
+                        ForeColor  = ProcontTheme.TextAccent
+                    }
+                }
             });
             grid.RebuildFooter();  // ← reserva Padding.Bottom y activa pintado
 

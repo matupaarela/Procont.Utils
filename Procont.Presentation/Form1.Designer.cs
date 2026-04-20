@@ -57,12 +57,10 @@
             Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel();
             Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
             Procont.Utils.Components.DataGrid.DataGridColumnGroup dataGridColumnGroup1 = new Procont.Utils.Components.DataGrid.DataGridColumnGroup();
+            Procont.Utils.Components.DataGrid.DataGridColumnGroup dataGridColumnGroup2 = new Procont.Utils.Components.DataGrid.DataGridColumnGroup();
             Procont.Utils.Components.DataGrid.DataGridFooterRow dataGridFooterRow1 = new Procont.Utils.Components.DataGrid.DataGridFooterRow();
             Procont.Utils.Components.DataGrid.DataGridFooterCell dataGridFooterCell1 = new Procont.Utils.Components.DataGrid.DataGridFooterCell();
-            Procont.Utils.Components.DataGrid.DataGridFooterCell dataGridFooterCell2 = new Procont.Utils.Components.DataGrid.DataGridFooterCell();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
@@ -249,15 +247,15 @@
             // 
             // procontDataGridView1
             // 
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
-            this.procontDataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            dataGridColumnGroup1.BackColor = System.Drawing.Color.Transparent;
-            dataGridColumnGroup1.ColumnNamesText = "Column1, Column2";
-            dataGridColumnGroup1.Title = "Prueba";
+            dataGridColumnGroup1.BackColor = System.Drawing.Color.Empty;
+            dataGridColumnGroup1.ColumnNamesText = "Column1, Column2, Column3";
+            dataGridColumnGroup1.Title = "Comprobante";
+            dataGridColumnGroup2.BackColor = System.Drawing.Color.Empty;
+            dataGridColumnGroup2.ColumnNamesText = "Column4, Column5";
+            dataGridColumnGroup2.Title = "Cliente/Proveedor";
             this.procontDataGridView1.ColumnGroups.Add(dataGridColumnGroup1);
+            this.procontDataGridView1.ColumnGroups.Add(dataGridColumnGroup2);
+            this.procontDataGridView1.ColumnHeaderBackColor = System.Drawing.Color.Empty;
             this.procontDataGridView1.ColumnHeadersHeight = 48;
             this.procontDataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
             this.procontDataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
@@ -268,61 +266,46 @@
             this.Column5,
             this.Column6});
             this.procontDataGridView1.EnableHeadersVisualStyles = false;
-            dataGridFooterRow1.BackColor = System.Drawing.Color.Transparent;
-            dataGridFooterCell1.ColumnName = "Column1";
-            dataGridFooterCell1.ForeColor = System.Drawing.Color.Transparent;
+            dataGridFooterRow1.BackColor = System.Drawing.Color.Empty;
+            dataGridFooterCell1.ColumnName = "Column6";
+            dataGridFooterCell1.ForeColor = System.Drawing.Color.Blue;
             dataGridFooterCell1.Formula = Procont.Utils.Components.DataGrid.FooterFormula.Sum;
-            dataGridFooterCell1.Text = "Suma";
-            dataGridFooterCell2.ColumnName = "Column2";
-            dataGridFooterCell2.ForeColor = System.Drawing.Color.Transparent;
-            dataGridFooterCell2.Formula = Procont.Utils.Components.DataGrid.FooterFormula.Average;
-            dataGridFooterCell2.Text = "Promedio";
             dataGridFooterRow1.Cells.Add(dataGridFooterCell1);
-            dataGridFooterRow1.Cells.Add(dataGridFooterCell2);
             this.procontDataGridView1.FooterRows.Add(dataGridFooterRow1);
-            this.procontDataGridView1.GroupHeaderBackColor = System.Drawing.Color.Transparent;
-            this.procontDataGridView1.HeaderBackColor = System.Drawing.Color.Transparent;
-            this.procontDataGridView1.Location = new System.Drawing.Point(266, 623);
+            this.procontDataGridView1.GroupHeaderBackColor = System.Drawing.Color.Empty;
+            this.procontDataGridView1.Location = new System.Drawing.Point(266, 625);
             this.procontDataGridView1.Name = "procontDataGridView1";
-            this.procontDataGridView1.RowHeadersWidth = 20;
-            dataGridViewCellStyle2.BackColor = System.Drawing.Color.White;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 8.5F);
-            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
-            this.procontDataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle2;
-            this.procontDataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
-            this.procontDataGridView1.Size = new System.Drawing.Size(648, 198);
+            this.procontDataGridView1.Size = new System.Drawing.Size(648, 217);
             this.procontDataGridView1.TabIndex = 10;
             // 
             // Column1
             // 
-            this.Column1.HeaderText = "Column1";
+            this.Column1.HeaderText = "Tipo";
             this.Column1.Name = "Column1";
             // 
             // Column2
             // 
-            this.Column2.HeaderText = "Column2";
+            this.Column2.HeaderText = "Serie";
             this.Column2.Name = "Column2";
             // 
             // Column3
             // 
-            this.Column3.HeaderText = "Column3";
+            this.Column3.HeaderText = "Nro.";
             this.Column3.Name = "Column3";
             // 
             // Column4
             // 
-            this.Column4.HeaderText = "Column4";
+            this.Column4.HeaderText = "Nro. Dcto.";
             this.Column4.Name = "Column4";
             // 
             // Column5
             // 
-            this.Column5.HeaderText = "Column5";
+            this.Column5.HeaderText = "Razón Social";
             this.Column5.Name = "Column5";
             // 
             // Column6
             // 
-            this.Column6.HeaderText = "Column6";
+            this.Column6.HeaderText = "Importe Total";
             this.Column6.Name = "Column6";
             // 
             // Form1
