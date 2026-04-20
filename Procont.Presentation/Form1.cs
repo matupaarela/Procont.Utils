@@ -1,6 +1,7 @@
 ﻿using FontAwesome.Sharp;
 using Procont.Utils.Components.DataGrid;
 using Procont.Utils.Core.Models;
+using Procont.Utils.Core.Theming;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -45,35 +46,84 @@ namespace Procont.Presentation
                 new BindableItem("Kappa Group",       11, IconChar.Users),
             };
 
-            var procontDataGridView1 = new ProcontDataGridView
+            SetupDgv();
+        }
+
+
+        private void SetupDgv()
+        {
+            var grid = new ProcontDataGridView
             {
                 AutoGenerateColumns = false,
+                Dock = DockStyle.Fill
             };
 
-            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column1", HeaderText = "Enero" });
-            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column2", HeaderText = "Febrero" });
-            procontDataGridView1.Columns.Add(new DataGridViewTextBoxColumn { Name = "Column3", HeaderText = "Marzo" });
+            // ── Columnas ──────────────────────────────────────────────────────
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Descripcion", HeaderText = "Descripción", Width = 200 });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Enero", HeaderText = "Enero", Width = 90 });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Febrero", HeaderText = "Febrero", Width = 90 });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Marzo", HeaderText = "Marzo", Width = 90 });
+            grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Total", HeaderText = "Total", Width = 100 });
 
-            procontDataGridView1.ColumnGroups.Add(new DataGridColumnGroup
+            // ── Grupo de columnas ─────────────────────────────────────────────
+            // Usar ColumnNamesText (string CSV), NO la sintaxis { "a", "b" } del designer
+            grid.ColumnGroups.Add(new DataGridColumnGroup
             {
-                Title = "Periodo anual",
-                ColumnNames = { "Column1", "Column2", "Column3" },
+                Title = "Período anual",
+                BackColor = Color.FromArgb(15, 245, 168, 30),  // tinte ámbar sutil
+                ColumnNamesText = "Enero, Febrero, Marzo"             // ← nombres exactos de columna
             });
+            grid.ApplyColumnGroups();  // explícito tras agregar grupos en Load
 
+            // ── Footer integrado ──────────────────────────────────────────────
+            grid.FooterRows.Add(new DataGridFooterRow
+            {
+                Cells =
+        {
+            new DataGridFooterCell
+            {
+                ColumnName = "Descripcion",
+                Formula    = FooterFormula.Custom,
+                Text       = "TOTAL",
+                Alignment  = ContentAlignment.MiddleLeft
+            },
+            new DataGridFooterCell
+            {
+                ColumnName = "Enero",
+                Formula    = FooterFormula.Sum,
+                Format     = "N2"
+            },
+            new DataGridFooterCell
+            {
+                ColumnName = "Febrero",
+                Formula    = FooterFormula.Sum,
+                Format     = "N2"
+            },
+            new DataGridFooterCell
+            {
+                ColumnName = "Marzo",
+                Formula    = FooterFormula.Sum,
+                Format     = "N2"
+            },
+            new DataGridFooterCell
+            {
+                ColumnName = "Total",
+                Formula    = FooterFormula.Sum,
+                Format     = "N2",
+                ForeColor  = ProcontTheme.TextAccent
+            }
+        }
+            });
+            grid.RebuildFooter();  // ← reserva Padding.Bottom y activa pintado
 
-            var footer = procontDataGridView1.CreateFooterBar();
-            footer.Dock = DockStyle.Bottom;
-            flowLayoutPanel1.Controls.Add(footer);
-            flowLayoutPanel1.Controls.Add(procontDataGridView1);   // DGV must be added AFTER footer
-            
-            footer.Rows.Add(new DataGridFooterRow
-              { Cells =
-                  {
-                    new DataGridFooterCell { ColumnName = "Total", Formula = FooterFormula.Sum, Format = "N2" },
-                    new DataGridFooterCell { ColumnName = "Label", Text = "TOTAL", Alignment = ContentAlignment.MiddleLeft }
-                  }
-              });
-            footer.Rebuild();
+            // ── Datos de prueba ───────────────────────────────────────────────
+            grid.Rows.Add("Producto A", 1200.50, 1350.75, 980.00, 3531.25);
+            grid.Rows.Add("Producto B", 850.00, 920.00, 1100.50, 2870.50);
+            grid.Rows.Add("Producto C", 600.25, 700.00, 650.75, 1951.00);
+
+            // ── Agregar al panel ──────────────────────────────────────────────
+            // El footer se pinta DENTRO del grid — no necesitas añadir ningún control extra
+            flowLayoutPanel1.Controls.Add(grid);
         }
 
         private void button1_Click(object sender, EventArgs e)

@@ -28,6 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel1 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel2 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel3 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel4 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel5 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
             Procont.Utils.Components.Sidebar.Models.SidebarGroupModel sidebarGroupModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarGroupModel();
             Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
@@ -52,25 +57,34 @@
             Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel sidebarSeparatorModel2 = new Procont.Utils.Components.Sidebar.Models.SidebarSeparatorModel();
             Procont.Utils.Components.Sidebar.Models.SidebarItemModel sidebarItemModel15 = new Procont.Utils.Components.Sidebar.Models.SidebarItemModel();
             Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel sidebarRootItemModel1 = new Procont.Utils.Components.Sidebar.Models.SidebarRootItemModel();
-            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel1 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
-            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel2 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
-            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel3 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
-            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel4 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
-            Procont.Utils.Components.DataItem.Models.DataItemModel dataItemModel5 = new Procont.Utils.Components.DataItem.Models.DataItemModel();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
+            Procont.Utils.Components.DataGrid.DataGridColumnGroup dataGridColumnGroup1 = new Procont.Utils.Components.DataGrid.DataGridColumnGroup();
+            Procont.Utils.Components.DataGrid.DataGridFooterRow dataGridFooterRow1 = new Procont.Utils.Components.DataGrid.DataGridFooterRow();
+            Procont.Utils.Components.DataGrid.DataGridFooterCell dataGridFooterCell1 = new Procont.Utils.Components.DataGrid.DataGridFooterCell();
+            Procont.Utils.Components.DataGrid.DataGridFooterCell dataGridFooterCell2 = new Procont.Utils.Components.DataGrid.DataGridFooterCell();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
             this.iconPictureBox1 = new FontAwesome.Sharp.IconPictureBox();
             this.label1 = new System.Windows.Forms.Label();
             this.button1 = new System.Windows.Forms.Button();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.TbResultTest = new System.Windows.Forms.TextBox();
             this.CboTest = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.dataItemView1 = new Procont.Utils.Components.DataItem.DataItemView();
             this.comboSearchBox1 = new Procont.Utils.Components.ComboSearch.ComboSearchBox();
             this.sidebarControl1 = new Procont.Utils.Components.Sidebar.SidebarControl();
-            this.dataItemView1 = new Procont.Utils.Components.DataItem.DataItemView();
-            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
+            this.procontDataGridView1 = new Procont.Utils.Components.DataGrid.ProcontDataGridView();
+            this.Column1 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column2 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column3 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column4 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column5 = new System.Windows.Forms.DataGridViewTextBoxColumn();
+            this.Column6 = new System.Windows.Forms.DataGridViewTextBoxColumn();
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).BeginInit();
             this.groupBox1.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.procontDataGridView1)).BeginInit();
             this.SuspendLayout();
             // 
             // iconPictureBox1
@@ -110,7 +124,7 @@
             this.groupBox1.Controls.Add(this.TbResultTest);
             this.groupBox1.Controls.Add(this.button1);
             this.groupBox1.Controls.Add(this.CboTest);
-            this.groupBox1.Location = new System.Drawing.Point(281, 393);
+            this.groupBox1.Location = new System.Drawing.Point(266, 97);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(301, 161);
             this.groupBox1.TabIndex = 5;
@@ -138,6 +152,33 @@
             this.CboTest.TabIndex = 4;
             this.CboTest.Text = "comboSearchBox1";
             this.CboTest.MultiSelectionChanged += new System.EventHandler<Procont.Utils.Components.ComboSearch.MultiSelectionChangedEventArgs>(this.CboTest_MultiSelectionChanged);
+            // 
+            // flowLayoutPanel1
+            // 
+            this.flowLayoutPanel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(266, 274);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(648, 325);
+            this.flowLayoutPanel1.TabIndex = 9;
+            // 
+            // dataItemView1
+            // 
+            this.dataItemView1.AutoScroll = true;
+            this.dataItemView1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(39)))), ((int)(((byte)(59)))));
+            dataItemModel1.ActionLabel = "Agregar";
+            dataItemModel1.Badge = Procont.Utils.Components.Sidebar.Models.SidebarBadge.New;
+            dataItemModel1.Description = "describiendo";
+            dataItemModel1.Variant = Procont.Utils.Components.DataItem.Models.DataItemVariant.Outline;
+            this.dataItemView1.Items.Add(dataItemModel1);
+            this.dataItemView1.Items.Add(dataItemModel2);
+            this.dataItemView1.Items.Add(dataItemModel3);
+            this.dataItemView1.Items.Add(dataItemModel4);
+            this.dataItemView1.Items.Add(dataItemModel5);
+            this.dataItemView1.Location = new System.Drawing.Point(573, 81);
+            this.dataItemView1.Name = "dataItemView1";
+            this.dataItemView1.Size = new System.Drawing.Size(341, 177);
+            this.dataItemView1.TabIndex = 8;
+            this.dataItemView1.Text = "dataItemView1";
             // 
             // comboSearchBox1
             // 
@@ -202,42 +243,95 @@
             this.sidebarControl1.Name = "sidebarControl1";
             this.sidebarControl1.Ruc = "20602111602";
             this.sidebarControl1.ShowDashboard = false;
-            this.sidebarControl1.Size = new System.Drawing.Size(260, 566);
+            this.sidebarControl1.Size = new System.Drawing.Size(260, 854);
             this.sidebarControl1.TabIndex = 0;
             this.sidebarControl1.ItemSelected += new System.EventHandler<Procont.Utils.Components.Sidebar.SidebarMenuItemControl>(this.sidebarControl1_ItemSelected);
             // 
-            // dataItemView1
+            // procontDataGridView1
             // 
-            this.dataItemView1.AutoScroll = true;
-            this.dataItemView1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(39)))), ((int)(((byte)(59)))));
-            dataItemModel1.ActionLabel = "Agregar";
-            dataItemModel1.Badge = Procont.Utils.Components.Sidebar.Models.SidebarBadge.New;
-            dataItemModel1.Description = "describiendo";
-            dataItemModel1.Variant = Procont.Utils.Components.DataItem.Models.DataItemVariant.Outline;
-            this.dataItemView1.Items.Add(dataItemModel1);
-            this.dataItemView1.Items.Add(dataItemModel2);
-            this.dataItemView1.Items.Add(dataItemModel3);
-            this.dataItemView1.Items.Add(dataItemModel4);
-            this.dataItemView1.Items.Add(dataItemModel5);
-            this.dataItemView1.Location = new System.Drawing.Point(588, 377);
-            this.dataItemView1.Name = "dataItemView1";
-            this.dataItemView1.Size = new System.Drawing.Size(341, 177);
-            this.dataItemView1.TabIndex = 8;
-            this.dataItemView1.Text = "dataItemView1";
+            dataGridViewCellStyle1.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
+            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
+            this.procontDataGridView1.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
+            dataGridColumnGroup1.BackColor = System.Drawing.Color.Transparent;
+            dataGridColumnGroup1.ColumnNamesText = "Column1, Column2";
+            dataGridColumnGroup1.Title = "Prueba";
+            this.procontDataGridView1.ColumnGroups.Add(dataGridColumnGroup1);
+            this.procontDataGridView1.ColumnHeadersHeight = 48;
+            this.procontDataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.DisableResizing;
+            this.procontDataGridView1.Columns.AddRange(new System.Windows.Forms.DataGridViewColumn[] {
+            this.Column1,
+            this.Column2,
+            this.Column3,
+            this.Column4,
+            this.Column5,
+            this.Column6});
+            this.procontDataGridView1.EnableHeadersVisualStyles = false;
+            dataGridFooterRow1.BackColor = System.Drawing.Color.Transparent;
+            dataGridFooterCell1.ColumnName = "Column1";
+            dataGridFooterCell1.ForeColor = System.Drawing.Color.Transparent;
+            dataGridFooterCell1.Formula = Procont.Utils.Components.DataGrid.FooterFormula.Sum;
+            dataGridFooterCell1.Text = "Suma";
+            dataGridFooterCell2.ColumnName = "Column2";
+            dataGridFooterCell2.ForeColor = System.Drawing.Color.Transparent;
+            dataGridFooterCell2.Formula = Procont.Utils.Components.DataGrid.FooterFormula.Average;
+            dataGridFooterCell2.Text = "Promedio";
+            dataGridFooterRow1.Cells.Add(dataGridFooterCell1);
+            dataGridFooterRow1.Cells.Add(dataGridFooterCell2);
+            this.procontDataGridView1.FooterRows.Add(dataGridFooterRow1);
+            this.procontDataGridView1.GroupHeaderBackColor = System.Drawing.Color.Transparent;
+            this.procontDataGridView1.HeaderBackColor = System.Drawing.Color.Transparent;
+            this.procontDataGridView1.Location = new System.Drawing.Point(266, 623);
+            this.procontDataGridView1.Name = "procontDataGridView1";
+            this.procontDataGridView1.RowHeadersWidth = 20;
+            dataGridViewCellStyle2.BackColor = System.Drawing.Color.White;
+            dataGridViewCellStyle2.Font = new System.Drawing.Font("Segoe UI", 8.5F);
+            dataGridViewCellStyle2.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
+            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(230)))), ((int)(((byte)(230)))), ((int)(((byte)(230)))));
+            this.procontDataGridView1.RowsDefaultCellStyle = dataGridViewCellStyle2;
+            this.procontDataGridView1.SelectionMode = System.Windows.Forms.DataGridViewSelectionMode.FullRowSelect;
+            this.procontDataGridView1.Size = new System.Drawing.Size(648, 198);
+            this.procontDataGridView1.TabIndex = 10;
             // 
-            // flowLayoutPanel1
+            // Column1
             // 
-            this.flowLayoutPanel1.Location = new System.Drawing.Point(273, 95);
-            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(548, 248);
-            this.flowLayoutPanel1.TabIndex = 9;
+            this.Column1.HeaderText = "Column1";
+            this.Column1.Name = "Column1";
+            // 
+            // Column2
+            // 
+            this.Column2.HeaderText = "Column2";
+            this.Column2.Name = "Column2";
+            // 
+            // Column3
+            // 
+            this.Column3.HeaderText = "Column3";
+            this.Column3.Name = "Column3";
+            // 
+            // Column4
+            // 
+            this.Column4.HeaderText = "Column4";
+            this.Column4.Name = "Column4";
+            // 
+            // Column5
+            // 
+            this.Column5.HeaderText = "Column5";
+            this.Column5.Name = "Column5";
+            // 
+            // Column6
+            // 
+            this.Column6.HeaderText = "Column6";
+            this.Column6.Name = "Column6";
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
-            this.ClientSize = new System.Drawing.Size(941, 566);
+            this.ClientSize = new System.Drawing.Size(941, 854);
+            this.Controls.Add(this.procontDataGridView1);
             this.Controls.Add(this.flowLayoutPanel1);
             this.Controls.Add(this.dataItemView1);
             this.Controls.Add(this.comboSearchBox1);
@@ -251,8 +345,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.iconPictureBox1)).EndInit();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.sidebarControl1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.procontDataGridView1)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -270,5 +365,12 @@
         private Utils.Components.ComboSearch.ComboSearchBox comboSearchBox1;
         private Utils.Components.DataItem.DataItemView dataItemView1;
         private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private Utils.Components.DataGrid.ProcontDataGridView procontDataGridView1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column1;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column2;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column3;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column4;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column5;
+        private System.Windows.Forms.DataGridViewTextBoxColumn Column6;
     }
 }
