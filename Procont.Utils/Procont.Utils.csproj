@@ -81,8 +81,13 @@
     <Compile Include="Components\DataItem\DataItemView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Components\DataItem\Models\DataItemActionCollectionEditor.cs" />
+    <Compile Include="Components\DataItem\Models\DataItemActionModel.cs" />
     <Compile Include="Components\DataItem\Models\DataItemEnums.cs" />
     <Compile Include="Components\DataItem\Models\DataItemModel.cs" />
+    <Compile Include="Components\DataItem\SplitActionButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Core\Extensions\GraphicsExtensions.cs" />
     <Compile Include="Core\Models\BindableItem.cs" />
     <Compile Include="Core\Theming\IThemeable.cs" />

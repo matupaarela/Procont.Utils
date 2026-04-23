@@ -1,18 +1,27 @@
 ﻿using FontAwesome.Sharp;
 using Procont.Utils.Components.Sidebar.Models;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing;
+using System.Drawing.Design;
 
 namespace Procont.Utils.Components.DataItem.Models
 {
     /// <summary>
     /// Model for one row in a <see cref="DataItemView"/>.
     ///
-    /// Maps to shadcn's Item composition:
-    ///   ItemMedia → Icon / Avatar / Image
-    ///   ItemContent → Title + Description
-    ///   ItemActions → ActionLabel (inline link) or ActionsPanel (embedded controls)
+    /// [Serializable] es obligatorio para que el clipboard y el undo/redo
+    /// del diseñador de Visual Studio puedan clonar los items de la
+    /// colección Items sin lanzar la excepción "no está marcado como serializable".
+    ///
+    /// ── DESIGNER (colección Actions) ────────────────────────────────
+    ///   Properties → Actions → [...] → "Add" crea DataItemActionModel.
+    ///   Configura Key, Label, Icon, IsSplit.
+    ///   Los handlers se wirean en código (Form.Load) vía
+    ///   dataItemControl.GetAction("key").PrimaryClicked += ...
     /// </summary>
+    [Serializable]
     [TypeConverter(typeof(ExpandableObjectConverter))]
     public class DataItemModel
     {
@@ -70,11 +79,27 @@ namespace Procont.Utils.Components.DataItem.Models
         [DefaultValue(SidebarBadge.None)]
         public SidebarBadge Badge { get; set; } = SidebarBadge.None;
 
-        // ── Action ─────────────────────────────────────────────────────
+        // ── Action (legacy — texto inline, sin botón) ──────────────────
         [Category("DataItem — Action")]
-        [Description("Text of the inline action link rendered on the right. Empty = no link.")]
+        [Description("Text of the inline action link rendered on the right. Empty = no link.\n" +
+                     "Para botones reales usa la colección Actions.")]
         [DefaultValue("")]
         public string ActionLabel { get; set; } = "";
+
+        // ── Actions (botones embebidos) ────────────────────────────────
+        /// <summary>
+        /// Botones de acción que se muestran en el área derecha del ítem.
+        /// Cada acción puede ser un IconButton (IsSplit=false) o un
+        /// SplitActionButton [Label|▼] (IsSplit=true).
+        ///
+        /// Los handlers se wirean en código después de RebuildFromModels():
+        ///   control.GetAction("edit").PrimaryClicked += (s,e) => Edit();
+        /// </summary>
+        [Category("DataItem — Actions")]
+        [Description("Botones de acción embebidos (Icon o Split). Los handlers se wirean en código por Key.")]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
+        [Editor(typeof(DataItemActionCollectionEditor), typeof(UITypeEditor))]
+        public List<DataItemActionModel> Actions { get; } = new List<DataItemActionModel>();
 
         public override string ToString() =>
             string.IsNullOrEmpty(Title) ? "(sin título)" : $"• {Title}";

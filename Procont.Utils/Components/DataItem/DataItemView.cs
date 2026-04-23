@@ -263,6 +263,36 @@ namespace Procont.Utils.Components.DataItem
             }
         }
 
+        /// <summary>
+        /// Devuelve el <see cref="DataItemControl"/> cuyo Key coincide.
+        /// Usar para wiring de handlers de acciones después de RebuildFromModels():
+        ///   dataItemView1.GetItem("user-1").GetAction("follow").PrimaryClicked += ...
+        /// Retorna null si no se encuentra.
+        /// </summary>
+        public DataItemControl GetItem(string key)
+        {
+            foreach (var item in _items)
+            {
+                if (item != null && item.Key == key) return item;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Llama a <see cref="DataItemControl.BuildActionsFromModel"/> en todos los
+        /// ítems cuyo modelo tenga acciones definidas. Útil si se modifican los
+        /// modelos después de la construcción inicial.
+        /// </summary>
+        public void RebuildActions()
+        {
+            for (int i = 0; i < _models.Count && i < _items.Count; i++)
+            {
+                if (_models[i] == null || _items[i] == null) continue;
+                if (_models[i].Actions.Count > 0)
+                    _items[i].BuildActionsFromModel(_models[i].Actions);
+            }
+        }
+
         // ══════════════════════════════════════════════════════════════
         // INTERNAL BUILD HELPERS
         // ══════════════════════════════════════════════════════════════
@@ -283,6 +313,11 @@ namespace Procont.Utils.Components.DataItem
                 AvatarInitials = m.AvatarInitials,
                 MediaImage = m.MediaImage
             };
+
+            // Construir botones desde la colección Actions del modelo
+            if (m.Actions != null && m.Actions.Count > 0)
+                ctrl.BuildActionsFromModel(m.Actions);
+
             ctrl.ItemClicked += (s, e) => ActivateItem(ctrl);
             ctrl.ActionClicked += (s, e) => ActionClicked?.Invoke(this, ctrl);
             return ctrl;
@@ -404,7 +439,7 @@ namespace Procont.Utils.Components.DataItem
         public DataItemBuilder WithDescription(string text)
         { _ctrl.Description = text; return this; }
 
-        public DataItemBuilder WithBadge(SidebarBadge badge)
+        public DataItemBuilder WithBadge(Procont.Utils.Components.Sidebar.Models.SidebarBadge badge)
         { _ctrl.Badge = badge; return this; }
 
         public DataItemBuilder WithActionLabel(string label)
@@ -419,17 +454,63 @@ namespace Procont.Utils.Components.DataItem
         public DataItemBuilder WithAvatarInitials(string initials)
         { _ctrl.MediaVariant = DataItemMediaVariant.Avatar; _ctrl.AvatarInitials = initials; return this; }
 
-        public DataItemBuilder WithImage(Image img)
+        public DataItemBuilder WithImage(System.Drawing.Image img)
         { _ctrl.MediaVariant = DataItemMediaVariant.Image; _ctrl.MediaImage = img; return this; }
 
         /// <summary>Embed a real control (Button, IconButton…) in the actions area.</summary>
-        public DataItemBuilder WithActionControl(Control c)
+        public DataItemBuilder WithActionControl(System.Windows.Forms.Control c)
         { _ctrl.ActionsPanel.Controls.Add(c); return this; }
 
-        public DataItemBuilder OnClicked(EventHandler handler)
+        /// <summary>
+        /// Agrega un IconButton de FontAwesome.Sharp al área de acciones.
+        /// El estilo (FlatStyle, borde cero, hover) se configura automáticamente
+        /// para integrarse con el tema del DataItemControl.
+        /// </summary>
+        public DataItemBuilder WithIconButton(
+            IconChar icon,
+            EventHandler clickHandler,
+            System.Drawing.Color? iconColor = null,
+            string tooltip = "")
+        {
+            var btn = new IconButton
+            {
+                IconChar = icon,
+                IconColor = iconColor ?? Procont.Utils.Core.Theming.ProcontTheme.TextAccent,
+                IconSize = 15,
+                IconFont = IconFont.Auto,
+                FlatStyle = System.Windows.Forms.FlatStyle.Flat,
+                BackColor = System.Drawing.Color.Transparent,
+                Width = 28,
+                Height = 24,
+                Cursor = System.Windows.Forms.Cursors.Hand,
+                Text = ""
+            };
+            btn.FlatAppearance.BorderSize = 0;
+            btn.FlatAppearance.MouseOverBackColor =
+                Procont.Utils.Core.Theming.ProcontTheme.SurfaceHover;
+            if (clickHandler != null) btn.Click += clickHandler;
+            if (!string.IsNullOrEmpty(tooltip))
+                new System.Windows.Forms.ToolTip().SetToolTip(btn, tooltip);
+            _ctrl.ActionsPanel.Controls.Add(btn);
+            return this;
+        }
+
+        /// <summary>Agrega un SplitActionButton [Label|▼] al área de acciones.</summary>
+        public DataItemBuilder WithSplitButton(
+            string label,
+            IconChar icon = IconChar.None,
+            System.Action<SplitActionButton> configure = null)
+        {
+            var btn = new SplitActionButton(label, icon);
+            configure?.Invoke(btn);
+            _ctrl.ActionsPanel.Controls.Add(btn);
+            return this;
+        }
+
+        public DataItemBuilder OnClicked(System.EventHandler handler)
         { _ctrl.ItemClicked += handler; return this; }
 
-        public DataItemBuilder OnActionClicked(EventHandler handler)
+        public DataItemBuilder OnActionClicked(System.EventHandler handler)
         { _ctrl.ActionClicked += handler; return this; }
 
         /// <summary>Returns the built control for direct use.</summary>
