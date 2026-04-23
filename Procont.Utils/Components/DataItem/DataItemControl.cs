@@ -11,35 +11,8 @@ using System.Windows.Forms;
 
 namespace Procont.Utils.Components.DataItem
 {
-    /// <summary>
-    /// Versatile item row — WinForms port of shadcn/ui's Item component.
-    ///
-    /// Layout (left → right):
-    ///   [ Media (optional) ] [ Title / Description ] [ Badge ] [ ActionLabel ] [ ActionsPanel ]
-    ///
-    /// ── STANDALONE USE ───────────────────────────────────────────────
-    ///   var item = new DataItemControl
-    ///   {
-    ///       Title        = "Security Alert",
-    ///       Description  = "New login from unknown device.",
-    ///       MediaVariant = DataItemMediaVariant.Icon,
-    ///       Icon         = IconChar.ShieldAlt,
-    ///   };
-    ///   // Agregar un split button desde código:
-    ///   item.AddActionButton("review", "Review", IconChar.Eye, isSplit: true);
-    ///   item.GetAction("review").PrimaryClicked += (s, e) => OpenReview();
-    ///   item.GetAction("review").AddOption("Dismiss", IconChar.Times, (s,e) => Dismiss());
-    ///
-    /// ── VÍA DataItemView + diseñador ─────────────────────────────────
-    ///   Properties → Actions → [...] → "Add" → configurar Key/Label/Icon/IsSplit.
-    ///   En Form.Load:
-    ///   dataItemView1.GetItem("alert").GetAction("review").PrimaryClicked += ...
-    ///
-    /// ── COMPLEX ACTIONS (embedded controls) ──────────────────────────
-    ///   item.ActionsPanel.Controls.Add(myButton);
-    /// </summary>
     [ToolboxItem(true)]
-    [Description("Versatile item row with media, title, description and actions (shadcn Item port).")]
+    [Description("Versatile item row with media, title, description and actions.")]
     [DefaultEvent("ItemClicked")]
     [DefaultProperty("Title")]
     public class DataItemControl : Control
@@ -59,30 +32,30 @@ namespace Procont.Utils.Components.DataItem
         private bool _isActive = false;
         private bool _isHovered = false;
         private bool _actionHovered = false;
-        private Rectangle _cachedActionBounds = Rectangle.Empty;
+        private Rectangle _cachedActionLabelBounds = Rectangle.Empty;
 
-        // ── Actions panel ──────────────────────────────────────────────
-        private readonly Panel _actionsPanel;
+        // ── Acciones: lista ordenada + dict por key ────────────────────
+        private readonly List<ActionButton> _actionList = new List<ActionButton>();
+        private readonly Dictionary<string, ActionButton> _actionDict =
+            new Dictionary<string, ActionButton>(StringComparer.OrdinalIgnoreCase);
 
-        // ── Diccionario de botones construidos por Key ─────────────────
-        private readonly Dictionary<string, SplitActionButton> _actionButtons
-            = new Dictionary<string, SplitActionButton>(StringComparer.OrdinalIgnoreCase);
+        // X donde comienza la primera acción; -1 = ninguna acción
+        private int _actionsStartX = -1;
 
-        // ── Layout constants ───────────────────────────────────────────
+        // ── Constants ─────────────────────────────────────────────────
         private const int PadH = 12;
         private const int MediaGap = 10;
         private const int ActionsGap = 8;
+        private const int BtnGap = 6;
 
         // ══════════════════════════════════════════════════════════════
         // EVENTOS
         // ══════════════════════════════════════════════════════════════
 
         [Category("DataItem")]
-        [Description("Fires when the user clicks anywhere on the item (except the action label).")]
         public event EventHandler ItemClicked;
 
         [Category("DataItem")]
-        [Description("Fires when the user clicks the inline action label (legacy ActionLabel).")]
         public event EventHandler ActionClicked;
 
         // ══════════════════════════════════════════════════════════════
@@ -148,14 +121,6 @@ namespace Procont.Utils.Components.DataItem
         public bool IsActive
         { get => _isActive; set { _isActive = value; Invalidate(); } }
 
-        /// <summary>
-        /// Panel docked al borde derecho para controles embebidos.
-        /// Usar <see cref="AddActionButton"/> para agregar botones tipados,
-        /// o acceder directamente para casos avanzados.
-        /// </summary>
-        [Browsable(false)]
-        public Panel ActionsPanel => _actionsPanel;
-
         [Browsable(false)] public override string Text { get => base.Text; set => base.Text = value; }
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
@@ -166,16 +131,6 @@ namespace Procont.Utils.Components.DataItem
 
         public DataItemControl()
         {
-            _actionsPanel = new Panel
-            {
-                BackColor = Color.Transparent,
-                Visible = false,
-                AutoSize = false
-            };
-            _actionsPanel.ControlAdded += (s, e) => { _actionsPanel.Visible = true; LayoutActionsPanel(); };
-            _actionsPanel.ControlRemoved += (s, e) => { _actionsPanel.Visible = _actionsPanel.Controls.Count > 0; LayoutActionsPanel(); };
-            Controls.Add(_actionsPanel);
-
             Height = GetNaturalHeight();
             Dock = DockStyle.Top;
             Cursor = Cursors.Hand;
@@ -186,57 +141,58 @@ namespace Procont.Utils.Components.DataItem
         }
 
         // ══════════════════════════════════════════════════════════════
-        // API DE ACCIONES — construcción y acceso
+        // API DE ACCIONES
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Crea y registra un <see cref="SplitActionButton"/> en el área de acciones.
-        /// Llamar en Form.Load (o desde <see cref="DataItemView.BuildActions"/>).
-        /// </summary>
-        /// <param name="key">Clave para recuperarlo con <see cref="GetAction"/>.</param>
-        /// <param name="label">Texto visible. Vacío = solo ícono.</param>
-        /// <param name="icon">Ícono del botón.</param>
-        /// <param name="isSplit">true = [Label|▼], false = solo ícono.</param>
-        public SplitActionButton AddActionButton(
+        public ActionButton AddActionButton(
             string key,
             string label = "",
             IconChar icon = IconChar.None,
             bool isSplit = false)
         {
-            var btn = new SplitActionButton(label, icon);
+            var btn = new ActionButton
+            {
+                ButtonText = label,
+                ButtonIcon = icon,
+                IsSplit = isSplit
+            };
+
             string resolvedKey = string.IsNullOrEmpty(key) ? label : key;
 
-            if (_actionButtons.ContainsKey(resolvedKey))
-                _actionButtons.Remove(resolvedKey);
+            // Reemplazar si existe
+            if (_actionDict.TryGetValue(resolvedKey, out var old))
+            {
+                _actionList.Remove(old);
+                Controls.Remove(old);
+                old.Dispose();
+                _actionDict.Remove(resolvedKey);
+            }
 
-            _actionButtons[resolvedKey] = btn;
-            _actionsPanel.Controls.Add(btn);
+            _actionDict[resolvedKey] = btn;
+            _actionList.Add(btn);
+            Controls.Add(btn);
+
+            if (Width > 0) LayoutActionControls();
             return btn;
         }
 
-        /// <summary>
-        /// Obtiene el <see cref="SplitActionButton"/> registrado con la clave indicada.
-        /// Retorna null si la clave no existe.
-        /// Usar para wiring de handlers después de RebuildFromModels():
-        ///   ctrl.GetAction("edit").PrimaryClicked += (s,e) => Edit();
-        /// </summary>
-        public SplitActionButton GetAction(string key)
+        public ActionButton GetAction(string key)
         {
             if (string.IsNullOrEmpty(key)) return null;
-            _actionButtons.TryGetValue(key, out var btn);
+            _actionDict.TryGetValue(key, out var btn);
             return btn;
         }
 
-        /// <summary>
-        /// Construye los botones de la colección <see cref="DataItemModel.Actions"/>.
-        /// Llamado internamente por <see cref="DataItemView"/> tras RebuildFromModels().
-        /// </summary>
         internal void BuildActionsFromModel(IList<DataItemActionModel> actions)
         {
-            // Limpiar botones anteriores del modelo (no los que haya agregado el usuario a mano)
-            foreach (var kv in _actionButtons)
-                _actionsPanel.Controls.Remove(kv.Value);
-            _actionButtons.Clear();
+            foreach (var btn in _actionList)
+            {
+                Controls.Remove(btn);
+                btn.Dispose();
+            }
+            _actionList.Clear();
+            _actionDict.Clear();
+            _actionsStartX = -1;
 
             if (actions == null) return;
             foreach (var a in actions)
@@ -244,14 +200,62 @@ namespace Procont.Utils.Components.DataItem
                 if (a == null) continue;
                 AddActionButton(
                     string.IsNullOrEmpty(a.Key) ? a.Label : a.Key,
-                    a.IsSplit ? a.Label : "",  // ícono puro si no es split
+                    a.IsSplit ? a.Label : "",
                     a.Icon,
                     a.IsSplit);
             }
         }
 
         // ══════════════════════════════════════════════════════════════
-        // SIZING HELPERS
+        // LAYOUT DE ACCIONES — el fix principal
+        // ══════════════════════════════════════════════════════════════
+
+        private void LayoutActionControls()
+        {
+            if (_actionList.Count == 0)
+            {
+                _actionsStartX = -1;
+                return;
+            }
+
+            // Ancho total de todos los botones + gaps entre ellos
+            int totalW = 0;
+            for (int i = 0; i < _actionList.Count; i++)
+            {
+                if (i > 0) totalW += BtnGap;
+                totalW += _actionList[i].Width;
+            }
+
+            _actionsStartX = Width - PadH - totalW;
+
+            int x = _actionsStartX;
+            foreach (var btn in _actionList)
+            {
+                int y = (Height - btn.Height) / 2;
+                btn.Location = new Point(x, y);
+                x += btn.Width + BtnGap;
+            }
+
+            // Forzar repintado para que rightBound use el nuevo _actionsStartX
+            Invalidate();
+        }
+
+        // OnLayout se llama cuando el padre asigna el tamaño real al control
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            base.OnLayout(e);
+            LayoutActionControls();
+        }
+
+        // OnHandleCreated como segunda red de seguridad
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            if (Width > 0) LayoutActionControls();
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // SIZING
         // ══════════════════════════════════════════════════════════════
 
         internal int GetNaturalHeight()
@@ -285,43 +289,6 @@ namespace Procont.Utils.Components.DataItem
         }
 
         // ══════════════════════════════════════════════════════════════
-        // ACTIONS PANEL LAYOUT
-        // ══════════════════════════════════════════════════════════════
-
-        private void LayoutActionsPanel()
-        {
-            if (!_actionsPanel.Visible) return;
-
-            const int gap = 6;
-            int x = 0;
-            int maxH = 0;
-            foreach (Control c in _actionsPanel.Controls)
-            {
-                c.Location = new Point(x, 0);
-                x += c.Width + gap;
-                if (c.Height > maxH) maxH = c.Height;
-            }
-            int totalW = x > gap ? x - gap : 0;
-            _actionsPanel.Size = new Size(totalW, maxH > 0 ? maxH : Height);
-            PositionActionsPanel();
-            Invalidate();
-        }
-
-        private void PositionActionsPanel()
-        {
-            if (!_actionsPanel.Visible) return;
-            int x = Width - PadH - _actionsPanel.Width;
-            int y = (Height - _actionsPanel.Height) / 2;
-            _actionsPanel.Location = new Point(x, y);
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-            PositionActionsPanel();
-        }
-
-        // ══════════════════════════════════════════════════════════════
         // MOUSE
         // ══════════════════════════════════════════════════════════════
 
@@ -335,7 +302,8 @@ namespace Procont.Utils.Components.DataItem
         {
             base.OnMouseMove(e);
             if (string.IsNullOrEmpty(_actionLabel)) return;
-            bool over = !_cachedActionBounds.IsEmpty && _cachedActionBounds.Contains(e.Location);
+            bool over = !_cachedActionLabelBounds.IsEmpty
+                     && _cachedActionLabelBounds.Contains(e.Location);
             if (over != _actionHovered)
             {
                 _actionHovered = over;
@@ -349,8 +317,8 @@ namespace Procont.Utils.Components.DataItem
             base.OnClick(e);
             var me = e as MouseEventArgs;
             if (me != null && !string.IsNullOrEmpty(_actionLabel)
-                && !_cachedActionBounds.IsEmpty
-                && _cachedActionBounds.Contains(me.Location))
+                && !_cachedActionLabelBounds.IsEmpty
+                && _cachedActionLabelBounds.Contains(me.Location))
             {
                 ActionClicked?.Invoke(this, EventArgs.Empty);
                 return;
@@ -401,33 +369,33 @@ namespace Procont.Utils.Components.DataItem
                 x += boxSize + MediaGap;
             }
 
-            int rightBound = Width - PadH;
-            if (_actionsPanel.Visible)
-                rightBound = _actionsPanel.Left - ActionsGap;
+            // rightBound retrocede desde la primera acción (o borde derecho)
+            int rightBound = _actionsStartX >= 0
+                ? _actionsStartX - ActionsGap
+                : Width - PadH;
 
-            // ── ActionLabel (legacy) ──────────────────────────────────
-            _cachedActionBounds = Rectangle.Empty;
+            // ActionLabel (legacy)
+            _cachedActionLabelBounds = Rectangle.Empty;
             if (!string.IsNullOrEmpty(_actionLabel))
             {
-                var labelSize = g.MeasureString(_actionLabel, ProcontTheme.FontSmall);
-                int lw = (int)labelSize.Width + 4;
-                int lh = (int)labelSize.Height;
+                var sz = g.MeasureString(_actionLabel, ProcontTheme.FontSmall);
+                int lw = (int)sz.Width + 4;
+                int lh = (int)sz.Height;
                 int lx = rightBound - lw;
                 int ly = (Height - lh) / 2;
 
                 Color lc = _actionHovered ? ProcontTheme.TextPrimary : ProcontTheme.TextAccent;
                 using (var b = new SolidBrush(lc))
                     g.DrawString(_actionLabel, ProcontTheme.FontSmall, b, new PointF(lx, ly));
-
                 if (_actionHovered)
                     using (var pen = new Pen(lc, 1f))
                         g.DrawLine(pen, lx, ly + lh - 1, lx + lw, ly + lh - 1);
 
-                _cachedActionBounds = new Rectangle(lx, ly, lw, lh);
+                _cachedActionLabelBounds = new Rectangle(lx, ly, lw, lh);
                 rightBound = lx - ActionsGap;
             }
 
-            // ── Badge ─────────────────────────────────────────────────
+            // Badge
             if (_badge != SidebarBadge.None)
             {
                 int bw = g.MeasureBadgeWidth(_badge);
@@ -435,7 +403,7 @@ namespace Procont.Utils.Components.DataItem
                 rightBound -= bw + ActionsGap;
             }
 
-            // ── Content ───────────────────────────────────────────────
+            // Content
             int contentW = Math.Max(0, rightBound - x - 4);
             bool hasDesc = !string.IsNullOrEmpty(_description);
 
@@ -474,11 +442,9 @@ namespace Procont.Utils.Components.DataItem
             }
         }
 
-        // ── Media rendering ───────────────────────────────────────────
         private void DrawMedia(Graphics g, int x, int y, int boxSize)
         {
             var boxRect = new Rectangle(x, y, boxSize, boxSize);
-
             switch (_mediaVariant)
             {
                 case DataItemMediaVariant.Icon:
@@ -487,12 +453,12 @@ namespace Procont.Utils.Components.DataItem
                                                   ProcontTheme.TextAccent.G, ProcontTheme.TextAccent.B);
                         using (var fill = new SolidBrush(tint))
                             g.FillRoundedRect(fill, boxRect, ProcontTheme.RadiusSmall);
-
                         if (_icon != IconChar.None)
                         {
                             int is_ = GetIconDrawSize();
                             using (var bmp = _icon.ToBitmap(ProcontTheme.TextAccent, is_))
-                                g.DrawImage(bmp, x + (boxSize - is_) / 2, y + (boxSize - is_) / 2, is_, is_);
+                                g.DrawImage(bmp, x + (boxSize - is_) / 2,
+                                                y + (boxSize - is_) / 2, is_, is_);
                         }
                         break;
                     }
@@ -503,13 +469,17 @@ namespace Procont.Utils.Components.DataItem
                         using (var path = GraphicsExtensions.BuildRoundedPath(boxRect, boxSize / 2))
                         using (var fill = new SolidBrush(tint))
                             g.FillPath(fill, path);
-
                         if (!string.IsNullOrEmpty(_avatarInitials))
                         {
                             var f = _size == DataItemSize.Default ? ProcontTheme.FontBold : ProcontTheme.FontSmallBold;
-                            string ini = _avatarInitials.Length > 2 ? _avatarInitials.Substring(0, 2) : _avatarInitials;
+                            string ini = _avatarInitials.Length > 2
+                                ? _avatarInitials.Substring(0, 2) : _avatarInitials;
                             using (var b = new SolidBrush(ProcontTheme.TextAccent))
-                            using (var fmt = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                            using (var fmt = new StringFormat
+                            {
+                                Alignment = StringAlignment.Center,
+                                LineAlignment = StringAlignment.Center
+                            })
                                 g.DrawString(ini, f, b, boxRect, fmt);
                         }
                         break;
@@ -518,7 +488,8 @@ namespace Procont.Utils.Components.DataItem
                     {
                         if (_mediaImage != null)
                         {
-                            using (var path = GraphicsExtensions.BuildRoundedPath(boxRect, ProcontTheme.RadiusSmall))
+                            using (var path = GraphicsExtensions.BuildRoundedPath(
+                                       boxRect, ProcontTheme.RadiusSmall))
                             {
                                 g.SetClip(path);
                                 g.DrawImage(_mediaImage, boxRect);

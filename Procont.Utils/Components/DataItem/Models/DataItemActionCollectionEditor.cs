@@ -3,10 +3,6 @@ using System.ComponentModel.Design;
 
 namespace Procont.Utils.Components.DataItem.Models
 {
-    /// <summary>
-    /// CollectionEditor para <c>List&lt;DataItemActionModel&gt;</c>.
-    /// Muestra texto descriptivo en la lista y evita instanciar tipos nulos.
-    /// </summary>
     public class DataItemActionCollectionEditor : CollectionEditor
     {
         public DataItemActionCollectionEditor(Type type) : base(type) { }

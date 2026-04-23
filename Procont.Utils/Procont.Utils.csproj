@@ -75,6 +75,9 @@
     <Compile Include="Components\DataGrid\ProcontDataGridView.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Components\DataItem\ActionButton.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Components\DataItem\DataItemControl.cs">
       <SubType>Component</SubType>
     </Compile>

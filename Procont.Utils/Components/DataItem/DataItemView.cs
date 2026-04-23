@@ -10,44 +10,18 @@ using System.Windows.Forms;
 
 namespace Procont.Utils.Components.DataItem
 {
-    /// <summary>
-    /// Scrollable list of <see cref="DataItemControl"/> rows.
-    /// WinForms port of shadcn/ui's ItemGroup.
-    ///
-    /// ── DESIGNER (Items collection) ──────────────────────────────────
-    ///   Set up Items in the Properties grid, then call RebuildFromModels()
-    ///   in Form.Load (or let ISupportInitialize handle it automatically
-    ///   when placed in the designer).
-    ///
-    /// ── FLUENT CODE API ──────────────────────────────────────────────
-    ///   view.AddItem("key", "Title", "Description", IconChar.Shield)
-    ///       .WithActionLabel("Review")
-    ///       .OnActionClicked((s, e) => DoReview());
-    ///
-    /// ── GENERIC DATA SOURCE ──────────────────────────────────────────
-    ///   view.SetDataSource(contacts,
-    ///       display:     c => c.FullName,
-    ///       description: c => c.Email,
-    ///       icon:        c => IconChar.User);
-    /// </summary>
     [ToolboxItem(true)]
     [Description("Scrollable ItemGroup container for DataItemControl rows.")]
     [DefaultEvent("ItemClicked")]
     [DefaultProperty("Items")]
     public class DataItemView : ScrollableControl, ISupportInitialize
     {
-        // ── Model collection (designer) ────────────────────────────────
         private readonly List<DataItemModel> _models = new List<DataItemModel>();
-
-        // ── Built controls + separator markers ────────────────────────
-        // null entries represent separators in the list
         private readonly List<DataItemControl> _items = new List<DataItemControl>();
         private readonly List<Control> _separators = new List<Control>();
 
         private bool _initializing = false;
         private DataItemControl _activeItem = null;
-
-        // ── Config ────────────────────────────────────────────────────
         private bool _showSeparators = true;
         private DataItemSize _defaultSize = DataItemSize.Default;
         private DataItemVariant _defaultVariant = DataItemVariant.Default;
@@ -57,11 +31,9 @@ namespace Procont.Utils.Components.DataItem
         // ══════════════════════════════════════════════════════════════
 
         [Category("DataItemView")]
-        [Description("Fires when the user clicks an item row.")]
         public event EventHandler<DataItemControl> ItemClicked;
 
         [Category("DataItemView")]
-        [Description("Fires when the user clicks an item's inline action label.")]
         public event EventHandler<DataItemControl> ActionClicked;
 
         // ══════════════════════════════════════════════════════════════
@@ -69,7 +41,6 @@ namespace Procont.Utils.Components.DataItem
         // ══════════════════════════════════════════════════════════════
 
         [Category("DataItemView")]
-        [Description("Draw a 1-px separator line between items.")]
         [DefaultValue(true)]
         public bool ShowSeparators
         {
@@ -78,7 +49,6 @@ namespace Procont.Utils.Components.DataItem
         }
 
         [Category("DataItemView")]
-        [Description("Default size applied to items created via the fluent API.")]
         [DefaultValue(DataItemSize.Default)]
         public DataItemSize DefaultSize
         {
@@ -87,7 +57,6 @@ namespace Procont.Utils.Components.DataItem
         }
 
         [Category("DataItemView")]
-        [Description("Default variant applied to items created via the fluent API.")]
         [DefaultValue(DataItemVariant.Default)]
         public DataItemVariant DefaultVariant
         {
@@ -95,16 +64,13 @@ namespace Procont.Utils.Components.DataItem
             set => _defaultVariant = value;
         }
 
-        /// <summary>Model collection for designer / ISupportInitialize.</summary>
         [Category("DataItemView")]
-        [Description("Add DataItemModel entries here in the designer. Call RebuildFromModels() in Form.Load.")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Content)]
         public List<DataItemModel> Items => _models;
 
         [Browsable(false)]
         public DataItemControl ActiveItem => _activeItem;
 
-        // ── Ocultar heredados irrelevantes ─────────────────────────────
         [Browsable(false)] public override Color BackColor { get => base.BackColor; set => base.BackColor = value; }
         [Browsable(false)] public override Color ForeColor { get => base.ForeColor; set => base.ForeColor = value; }
 
@@ -137,7 +103,6 @@ namespace Procont.Utils.Components.DataItem
         // FLUENT CODE API
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>Adds an item and returns a fluent builder for further configuration.</summary>
         public DataItemBuilder AddItem(
             string title,
             string key = "",
@@ -161,12 +126,10 @@ namespace Procont.Utils.Components.DataItem
             return new DataItemBuilder(ctrl, this);
         }
 
-        /// <summary>Adds a horizontal separator line with an optional label.</summary>
         public void AddSeparator(string label = "")
         {
             var sep = BuildSeparator(label);
             _separators.Add(sep);
-            // We tag separators with a null entry in _items to preserve order
             _items.Add(null);
             if (!_initializing) RebuildPanel();
         }
@@ -175,10 +138,6 @@ namespace Procont.Utils.Components.DataItem
         // MODEL REBUILD
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Clears all controls and rebuilds from the <see cref="Items"/> model collection.
-        /// Called automatically by ISupportInitialize.EndInit().
-        /// </summary>
         public void RebuildFromModels()
         {
             if (_initializing) return;
@@ -195,10 +154,6 @@ namespace Procont.Utils.Components.DataItem
         // GENERIC DATA SOURCE
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>
-        /// Clears existing items and populates the view from any IEnumerable&lt;T&gt;
-        /// using selector functions.
-        /// </summary>
         public void SetDataSource<T>(
             IEnumerable<T> source,
             Func<T, string> display,
@@ -213,7 +168,6 @@ namespace Procont.Utils.Components.DataItem
             foreach (var item in source)
             {
                 if (item == null) continue;
-
                 IconChar ic = icon != null ? icon(item) : IconChar.None;
                 DataItemMediaVariant mv = mediaVariant != null
                     ? mediaVariant(item)
@@ -245,44 +199,23 @@ namespace Procont.Utils.Components.DataItem
             foreach (var item in _items)
             {
                 if (item == null) continue;
-                if (item.Key == key)
-                {
-                    ActivateItem(item);
-                    return true;
-                }
+                if (item.Key == key) { ActivateItem(item); return true; }
             }
             return false;
         }
 
         public void ClearSelection()
         {
-            if (_activeItem != null)
-            {
-                _activeItem.IsActive = false;
-                _activeItem = null;
-            }
+            if (_activeItem != null) { _activeItem.IsActive = false; _activeItem = null; }
         }
 
-        /// <summary>
-        /// Devuelve el <see cref="DataItemControl"/> cuyo Key coincide.
-        /// Usar para wiring de handlers de acciones después de RebuildFromModels():
-        ///   dataItemView1.GetItem("user-1").GetAction("follow").PrimaryClicked += ...
-        /// Retorna null si no se encuentra.
-        /// </summary>
         public DataItemControl GetItem(string key)
         {
             foreach (var item in _items)
-            {
                 if (item != null && item.Key == key) return item;
-            }
             return null;
         }
 
-        /// <summary>
-        /// Llama a <see cref="DataItemControl.BuildActionsFromModel"/> en todos los
-        /// ítems cuyo modelo tenga acciones definidas. Útil si se modifican los
-        /// modelos después de la construcción inicial.
-        /// </summary>
         public void RebuildActions()
         {
             for (int i = 0; i < _models.Count && i < _items.Count; i++)
@@ -294,7 +227,7 @@ namespace Procont.Utils.Components.DataItem
         }
 
         // ══════════════════════════════════════════════════════════════
-        // INTERNAL BUILD HELPERS
+        // BUILD HELPERS
         // ══════════════════════════════════════════════════════════════
 
         private DataItemControl BuildControl(DataItemModel m)
@@ -314,7 +247,6 @@ namespace Procont.Utils.Components.DataItem
                 MediaImage = m.MediaImage
             };
 
-            // Construir botones desde la colección Actions del modelo
             if (m.Actions != null && m.Actions.Count > 0)
                 ctrl.BuildActionsFromModel(m.Actions);
 
@@ -367,21 +299,15 @@ namespace Procont.Utils.Components.DataItem
             _activeItem = null;
         }
 
-        // ── Panel rebuild: add separators between items (DockStyle.Top = LIFO) ──
         private void RebuildPanel()
         {
             Controls.Clear();
-
-            // We need items in reverse (DockStyle.Top stacks bottom-up)
-            // Track separator index separately (they interleave via null markers in _items)
             int sepIdx = 0;
-
             for (int i = _items.Count - 1; i >= 0; i--)
             {
                 var item = _items[i];
                 if (item == null)
                 {
-                    // This was an AddSeparator() slot
                     int realSepIdx = CountNullsUpTo(i);
                     if (realSepIdx < _separators.Count)
                         Controls.Add(_separators[realSepIdx]);
@@ -389,7 +315,6 @@ namespace Procont.Utils.Components.DataItem
                 else
                 {
                     Controls.Add(item);
-                    // Between items add a thin separator panel when ShowSeparators is on
                     if (_showSeparators && i > 0)
                     {
                         var line = new Panel
@@ -422,9 +347,6 @@ namespace Procont.Utils.Components.DataItem
     // FLUENT BUILDER
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Returned by <see cref="DataItemView.AddItem"/> for chained configuration.
-    /// </summary>
     public sealed class DataItemBuilder
     {
         private readonly DataItemControl _ctrl;
@@ -439,7 +361,7 @@ namespace Procont.Utils.Components.DataItem
         public DataItemBuilder WithDescription(string text)
         { _ctrl.Description = text; return this; }
 
-        public DataItemBuilder WithBadge(Procont.Utils.Components.Sidebar.Models.SidebarBadge badge)
+        public DataItemBuilder WithBadge(SidebarBadge badge)
         { _ctrl.Badge = badge; return this; }
 
         public DataItemBuilder WithActionLabel(string label)
@@ -454,66 +376,47 @@ namespace Procont.Utils.Components.DataItem
         public DataItemBuilder WithAvatarInitials(string initials)
         { _ctrl.MediaVariant = DataItemMediaVariant.Avatar; _ctrl.AvatarInitials = initials; return this; }
 
-        public DataItemBuilder WithImage(System.Drawing.Image img)
+        public DataItemBuilder WithImage(Image img)
         { _ctrl.MediaVariant = DataItemMediaVariant.Image; _ctrl.MediaImage = img; return this; }
 
-        /// <summary>Embed a real control (Button, IconButton…) in the actions area.</summary>
-        public DataItemBuilder WithActionControl(System.Windows.Forms.Control c)
-        { _ctrl.ActionsPanel.Controls.Add(c); return this; }
-
         /// <summary>
-        /// Agrega un IconButton de FontAwesome.Sharp al área de acciones.
-        /// El estilo (FlatStyle, borde cero, hover) se configura automáticamente
-        /// para integrarse con el tema del DataItemControl.
+        /// Agrega un ActionButton al área de acciones.
+        /// isSplit=false → ícono simple.
+        /// isSplit=true  → [Label | ▼] con dropdown; usar configure() para añadir opciones.
         /// </summary>
-        public DataItemBuilder WithIconButton(
-            IconChar icon,
-            EventHandler clickHandler,
-            System.Drawing.Color? iconColor = null,
-            string tooltip = "")
-        {
-            var btn = new IconButton
-            {
-                IconChar = icon,
-                IconColor = iconColor ?? Procont.Utils.Core.Theming.ProcontTheme.TextAccent,
-                IconSize = 15,
-                IconFont = IconFont.Auto,
-                FlatStyle = System.Windows.Forms.FlatStyle.Flat,
-                BackColor = System.Drawing.Color.Transparent,
-                Width = 28,
-                Height = 24,
-                Cursor = System.Windows.Forms.Cursors.Hand,
-                Text = ""
-            };
-            btn.FlatAppearance.BorderSize = 0;
-            btn.FlatAppearance.MouseOverBackColor =
-                Procont.Utils.Core.Theming.ProcontTheme.SurfaceHover;
-            if (clickHandler != null) btn.Click += clickHandler;
-            if (!string.IsNullOrEmpty(tooltip))
-                new System.Windows.Forms.ToolTip().SetToolTip(btn, tooltip);
-            _ctrl.ActionsPanel.Controls.Add(btn);
-            return this;
-        }
-
-        /// <summary>Agrega un SplitActionButton [Label|▼] al área de acciones.</summary>
-        public DataItemBuilder WithSplitButton(
+        public DataItemBuilder WithActionButton(
             string label,
             IconChar icon = IconChar.None,
-            System.Action<SplitActionButton> configure = null)
+            bool isSplit = false,
+            Action<ActionButton> configure = null)
         {
-            var btn = new SplitActionButton(label, icon);
+            var btn = _ctrl.AddActionButton(label, label, icon, isSplit);
             configure?.Invoke(btn);
-            _ctrl.ActionsPanel.Controls.Add(btn);
             return this;
         }
 
-        public DataItemBuilder OnClicked(System.EventHandler handler)
+        /// <summary>
+        /// Agrega un ícono de acción simple (sin texto, sin dropdown).
+        /// </summary>
+        public DataItemBuilder WithIconAction(
+            string key,
+            IconChar icon,
+            EventHandler handler = null,
+            string tooltip = "")
+        {
+            var btn = _ctrl.AddActionButton(key, "", icon, isSplit: false);
+            if (handler != null) btn.PrimaryClicked += handler;
+            if (!string.IsNullOrEmpty(tooltip))
+                new ToolTip().SetToolTip(btn, tooltip);
+            return this;
+        }
+
+        public DataItemBuilder OnClicked(EventHandler handler)
         { _ctrl.ItemClicked += handler; return this; }
 
-        public DataItemBuilder OnActionClicked(System.EventHandler handler)
+        public DataItemBuilder OnActionClicked(EventHandler handler)
         { _ctrl.ActionClicked += handler; return this; }
 
-        /// <summary>Returns the built control for direct use.</summary>
         public DataItemControl Build() => _ctrl;
     }
 }

@@ -16,10 +16,5 @@ namespace Procont.Presentation.Tests
         {
             InitializeComponent();
         }
-
-        private void FormDataItemView_Load(object sender, EventArgs e)
-        {
-
-        }
     }
 }

@@ -28,38 +28,36 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormDataItemView));
-            this.dataItemView1 = new Procont.Utils.Components.DataItem.DataItemView();
-            ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).BeginInit();
+            this.actionButton1 = new Procont.Utils.Components.DataItem.ActionButton();
             this.SuspendLayout();
             // 
-            // dataItemView1
+            // actionButton1
             // 
-            this.dataItemView1.AutoScroll = true;
-            this.dataItemView1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(3)))), ((int)(((byte)(39)))), ((int)(((byte)(59)))));
-            this.dataItemView1.Items.Add(((Procont.Utils.Components.DataItem.Models.DataItemModel)(resources.GetObject("dataItemView1.Items"))));
-            this.dataItemView1.Location = new System.Drawing.Point(31, 77);
-            this.dataItemView1.Name = "dataItemView1";
-            this.dataItemView1.Size = new System.Drawing.Size(713, 273);
-            this.dataItemView1.TabIndex = 0;
-            this.dataItemView1.Text = "dataItemView1";
+            this.actionButton1.BackColor = System.Drawing.Color.Transparent;
+            this.actionButton1.ButtonIcon = FontAwesome.Sharp.IconChar.Add;
+            this.actionButton1.ButtonText = "asdasd";
+            this.actionButton1.Cursor = System.Windows.Forms.Cursors.Hand;
+            this.actionButton1.IsSplit = true;
+            this.actionButton1.Location = new System.Drawing.Point(187, 92);
+            this.actionButton1.Name = "actionButton1";
+            this.actionButton1.Size = new System.Drawing.Size(96, 26);
+            this.actionButton1.TabIndex = 0;
+            this.actionButton1.Text = "actionButton1";
             // 
             // FormDataItemView
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.dataItemView1);
+            this.Controls.Add(this.actionButton1);
             this.Name = "FormDataItemView";
             this.Text = "FormDataItemView";
-            this.Load += new System.EventHandler(this.FormDataItemView_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.dataItemView1)).EndInit();
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private Utils.Components.DataItem.DataItemView dataItemView1;
+        private Utils.Components.DataItem.ActionButton actionButton1;
     }
 }
