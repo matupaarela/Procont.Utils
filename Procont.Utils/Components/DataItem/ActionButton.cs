@@ -8,47 +8,43 @@ using System.Windows.Forms;
 namespace Procont.Utils.Components.DataItem
 {
     /// <summary>
-    /// Botón de acción unificado: puede funcionar como botón simple o como
-    /// split button [Label | ▼] con dropdown de opciones secundarias.
+    /// Botón de acción: simple o split [Label | ▼].
     ///
     /// ── SIMPLE ───────────────────────────────────────────────────────
-    ///   var btn = new ActionButton { ButtonText = "Edit", ButtonIcon = IconChar.Edit };
-    ///   btn.PrimaryClicked += (s, e) => Edit();
+    ///   var btn = new ActionButton { ButtonText = "Copiar" };
+    ///   btn.PrimaryClicked += (s, e) => Copiar();
     ///
     /// ── SPLIT ────────────────────────────────────────────────────────
-    ///   var btn = new ActionButton { ButtonText = "Follow", IsSplit = true };
-    ///   btn.PrimaryClicked += (s, e) => Follow();
-    ///   btn.AddOption("Unfollow", IconChar.UserMinus, (s, e) => Unfollow());
-    ///   btn.AddOption("Block",    IconChar.Ban,       (s, e) => Block());
+    ///   var btn = new ActionButton { ButtonText = "Publicar", IsSplit = true };
+    ///   btn.PrimaryClicked += (s, e) => Publicar();
+    ///   btn.AddOption("Descargar",          IconChar.Download,   (s, e) => Descargar());
+    ///   btn.AddOption("Añadir al proyecto", IconChar.FolderPlus, (s, e) => Aniadir());
+    ///   btn.AddSeparator();
+    ///   btn.AddOption("Eliminar",           IconChar.Trash,      (s, e) => Eliminar());
     ///
-    /// ── COLORES ──────────────────────────────────────────────────────
-    /// Usa SystemColors para integrarse con el tema del sistema.
-    /// El consumidor puede asignar ForeColor / BackColor para personalizar.
+    /// Usa SystemColors; hereda automáticamente el tema del sistema.
     /// </summary>
     public sealed class ActionButton : Control
     {
-        // ── Layout ────────────────────────────────────────────────────
-        private const int ArrowW = 20;
-        private const int PadH = 8;
+        // ── Medidas fijas ─────────────────────────────────────────────
         private const int FixedH = 26;
+        private const int PadL = 10;
+        private const int PadR = 10;
+        private const int ArrowW = 22;
         private const int IconSz = 13;
         private const int Radius = 4;
-        private const int BtnGap = 6;
 
-        // ── State ─────────────────────────────────────────────────────
+        // ── Estado ────────────────────────────────────────────────────
         private bool _isSplit = false;
         private bool _hoverMain = false;
         private bool _hoverArrow = false;
         private bool _menuOpen = false;
 
-        // ── Data ──────────────────────────────────────────────────────
+        // ── Datos ─────────────────────────────────────────────────────
         private string _text = "";
         private IconChar _icon = IconChar.None;
-
         private readonly ContextMenuStrip _menu;
 
-        // ── Evento ────────────────────────────────────────────────────
-        /// <summary>Clic en la parte principal del botón (no en el chevron).</summary>
         public event EventHandler PrimaryClicked;
 
         // ══════════════════════════════════════════════════════════════
@@ -58,28 +54,22 @@ namespace Procont.Utils.Components.DataItem
         public bool IsSplit
         {
             get => _isSplit;
-            set { _isSplit = value; RecalcSize(); Invalidate(); }
+            set { _isSplit = value; RecalcWidth(); Invalidate(); }
         }
 
         public string ButtonText
         {
             get => _text;
-            set { _text = value ?? ""; RecalcSize(); Invalidate(); }
+            set { _text = value ?? ""; RecalcWidth(); Invalidate(); }
         }
 
         public IconChar ButtonIcon
         {
             get => _icon;
-            set { _icon = value; RecalcSize(); Invalidate(); }
+            set { _icon = value; RecalcWidth(); Invalidate(); }
         }
 
         public bool HasOptions => _menu.Items.Count > 0;
-
-        /// <summary>
-        /// Zona de flecha visible si IsSplit = true,
-        /// independientemente de si hay opciones ya agregadas.
-        /// </summary>
-        private bool ShowArrow => _isSplit;
 
         // ══════════════════════════════════════════════════════════════
         // CONSTRUCTOR
@@ -92,9 +82,8 @@ namespace Procont.Utils.Components.DataItem
             _menu.Closed += (s, e) => { _menuOpen = false; Invalidate(); };
 
             Cursor = Cursors.Hand;
+            //BackColor = Color.Transparent;
 
-            // SupportsTransparentBackColor: los píxeles de las esquinas
-            // redondeadas dejan ver al padre sin pintar nada encima.
             SetStyle(
                 ControlStyles.SupportsTransparentBackColor |
                 ControlStyles.OptimizedDoubleBuffer |
@@ -102,28 +91,22 @@ namespace Procont.Utils.Components.DataItem
                 ControlStyles.UserPaint |
                 ControlStyles.ResizeRedraw, true);
 
-            BackColor = Color.Transparent;
-            RecalcSize();
+            RecalcWidth();
         }
 
         // ══════════════════════════════════════════════════════════════
         // API PÚBLICA
         // ══════════════════════════════════════════════════════════════
 
-        /// <summary>Agrega una opción al menú desplegable.</summary>
-        public void AddOption(string text, IconChar icon = IconChar.None,
-                              EventHandler handler = null)
+        public void AddOption(string text, IconChar icon = IconChar.None, EventHandler handler = null)
         {
             var item = new ToolStripMenuItem(text);
             if (icon != IconChar.None)
                 try { item.Image = icon.ToBitmap(SystemColors.MenuText, 14); } catch { }
-            if (handler != null)
-                item.Click += handler;
+            if (handler != null) item.Click += handler;
             _menu.Items.Add(item);
-            Invalidate();
         }
 
-        /// <summary>Agrega un separador al menú.</summary>
         public void AddSeparator() => _menu.Items.Add(new ToolStripSeparator());
 
         // ══════════════════════════════════════════════════════════════
@@ -133,7 +116,7 @@ namespace Procont.Utils.Components.DataItem
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
-            bool onArrow = ShowArrow && e.X >= Width - ArrowW;
+            bool onArrow = _isSplit && e.X >= Width - ArrowW;
             if (onArrow == _hoverArrow) return;
             _hoverArrow = onArrow;
             _hoverMain = !onArrow;
@@ -141,17 +124,12 @@ namespace Procont.Utils.Components.DataItem
         }
 
         protected override void OnMouseEnter(EventArgs e)
-        {
-            base.OnMouseEnter(e);
-            _hoverMain = true;
-            Invalidate();
-        }
+        { base.OnMouseEnter(e); _hoverMain = true; Invalidate(); }
 
         protected override void OnMouseLeave(EventArgs e)
         {
             base.OnMouseLeave(e);
-            _hoverArrow = false;
-            _hoverMain = false;
+            _hoverMain = false; _hoverArrow = false;
             Invalidate();
         }
 
@@ -160,13 +138,10 @@ namespace Procont.Utils.Components.DataItem
             base.OnMouseDown(e);
             if (e.Button != MouseButtons.Left) return;
 
-            if (ShowArrow && e.X >= Width - ArrowW)
+            if (_isSplit && e.X >= Width - ArrowW)
             {
-                // Zona del chevron: abrir dropdown si tiene opciones
-                if (HasOptions)
-                    _menu.Show(this, new Point(0, Height));
-                else
-                    PrimaryClicked?.Invoke(this, EventArgs.Empty); // fallback
+                if (HasOptions) _menu.Show(this, new Point(0, Height));
+                else PrimaryClicked?.Invoke(this, EventArgs.Empty);
             }
             else
             {
@@ -178,67 +153,71 @@ namespace Procont.Utils.Components.DataItem
         // PAINT
         // ══════════════════════════════════════════════════════════════
 
-        protected override void OnPaintBackground(PaintEventArgs e)
-        {
-            // No pintar fondo: los píxeles fuera del rounded rect
-            // muestran el padre a través de BackColor = Transparent.
-        }
+        protected override void OnPaintBackground(PaintEventArgs e) { }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             var g = e.Graphics;
             g.SetHighQuality();
 
-            int arrowZone = ShowArrow ? ArrowW : 0;
             var bounds = new Rectangle(0, 0, Width - 1, Height - 1);
 
-            // ── Fondo del botón ───────────────────────────────────────
-            Color bg = (_hoverMain || _hoverArrow || _menuOpen)
-                ? SystemColors.ControlLight
-                : SystemColors.Control;
-
-            using (var fill = new SolidBrush(bg))
-                g.FillRoundedRect(fill, bounds, Radius);
-
-            // ── Highlight extra en la zona del arrow ──────────────────
-            if (_hoverArrow && arrowZone > 0)
+            if (_isSplit)
             {
-                var arrowRect = new Rectangle(Width - arrowZone - 1, 0, arrowZone, Height - 1);
-                using (var path = BuildRightRoundedPath(arrowRect, Radius))
-                using (var fill = new SolidBrush(SystemColors.ButtonHighlight))
+                int split = Width - ArrowW - 1;
+
+                // Zona izquierda (label)
+                var leftRect = new Rectangle(0, 0, split, Height - 1);
+                var rightRect = new Rectangle(split, 0, ArrowW, Height - 1);
+
+                Color bgL = _hoverMain ? SystemColors.ControlLight : SystemColors.Control;
+                Color bgR = (_hoverArrow || _menuOpen)
+                            ? SystemColors.ControlLight : SystemColors.Control;
+
+                using (var path = LeftRounded(leftRect, Radius))
+                using (var fill = new SolidBrush(bgL))
                     g.FillPath(fill, path);
-            }
 
-            // ── Borde ─────────────────────────────────────────────────
-            using (var pen = new Pen(SystemColors.ControlDark, 1f))
-                g.DrawRoundedRect(pen, bounds, Radius);
+                using (var path = RightRounded(rightRect, Radius))
+                using (var fill = new SolidBrush(bgR))
+                    g.FillPath(fill, path);
 
-            // ── Divisor vertical (solo split) ─────────────────────────
-            if (arrowZone > 0)
-            {
-                int dx = Width - arrowZone - 1;
+                // Un solo borde que rodea los dos
                 using (var pen = new Pen(SystemColors.ControlDark, 1f))
-                    g.DrawLine(pen, dx, 4, dx, Height - 5);
+                    g.DrawRoundedRect(pen, bounds, Radius);
+
+                // Divisor vertical
+                using (var pen = new Pen(SystemColors.ControlDark, 1f))
+                    g.DrawLine(pen, split, 4, split, Height - 5);
+
+                // Chevron
+                PaintChevron(g, Width - ArrowW / 2 - 1, Height / 2, 3);
+            }
+            else
+            {
+                Color bg = _hoverMain ? SystemColors.ControlLight : SystemColors.Control;
+                using (var fill = new SolidBrush(bg))
+                    g.FillRoundedRect(fill, bounds, Radius);
+                using (var pen = new Pen(SystemColors.ControlDark, 1f))
+                    g.DrawRoundedRect(pen, bounds, Radius);
             }
 
-            // ── Ícono ─────────────────────────────────────────────────
-            int x = PadH;
+            // Ícono
+            int x = PadL;
             if (_icon != IconChar.None)
             {
-                int iy = (Height - IconSz) / 2;
                 try
                 {
                     using (var bmp = _icon.ToBitmap(SystemColors.ControlText, IconSz))
-                        g.DrawImage(bmp, x, iy, IconSz, IconSz);
+                        g.DrawImage(bmp, x, (Height - IconSz) / 2, IconSz, IconSz);
                 }
-                catch { /* FontAwesome no disponible */ }
+                catch { }
                 x += IconSz + 5;
             }
 
-            // ── Texto ─────────────────────────────────────────────────
-            int mainW = Width - arrowZone - 1;
-            int textW = mainW - x - 4;
-            if (textW > 0 && !string.IsNullOrEmpty(_text))
+            // Texto
+            int maxW = (_isSplit ? Width - ArrowW - 1 : Width) - x - PadR;
+            if (maxW > 0 && !string.IsNullOrEmpty(_text))
             {
                 using (var b = new SolidBrush(SystemColors.ControlText))
                 using (var fmt = new StringFormat
@@ -248,32 +227,24 @@ namespace Procont.Utils.Components.DataItem
                     Trimming = StringTrimming.EllipsisCharacter
                 })
                     g.DrawString(_text, SystemFonts.DefaultFont, b,
-                        new RectangleF(x, 0, textW, Height), fmt);
+                        new RectangleF(x, 0, maxW, Height), fmt);
             }
+        }
 
-            // ── Chevron ───────────────────────────────────────────────
-            if (arrowZone > 0)
+        private void PaintChevron(Graphics g, int cx, int cy, int half)
+        {
+            Color c = (_hoverArrow || _menuOpen) ? SystemColors.ControlText : SystemColors.GrayText;
+            using (var pen = new Pen(c, 1.5f) { StartCap = LineCap.Round, EndCap = LineCap.Round })
             {
-                int cx = Width - arrowZone / 2 - 1;
-                int cy = Height / 2;
-                int half = 3;
-                Color cc = _hoverArrow
-                    ? SystemColors.ControlText
-                    : SystemColors.GrayText;
-
-                using (var pen = new Pen(cc, 1.5f)
-                { StartCap = LineCap.Round, EndCap = LineCap.Round })
+                if (_menuOpen)
                 {
-                    if (_menuOpen)
-                    {
-                        g.DrawLine(pen, cx - half, cy + 1, cx, cy - half + 1);
-                        g.DrawLine(pen, cx, cy - half + 1, cx + half, cy + 1);
-                    }
-                    else
-                    {
-                        g.DrawLine(pen, cx - half, cy - 1, cx, cy + half - 1);
-                        g.DrawLine(pen, cx, cy + half - 1, cx + half, cy - 1);
-                    }
+                    g.DrawLine(pen, cx - half, cy + 2, cx, cy - 2);
+                    g.DrawLine(pen, cx, cy - 2, cx + half, cy + 2);
+                }
+                else
+                {
+                    g.DrawLine(pen, cx - half, cy - 2, cx, cy + 2);
+                    g.DrawLine(pen, cx, cy + 2, cx + half, cy - 2);
                 }
             }
         }
@@ -282,36 +253,48 @@ namespace Procont.Utils.Components.DataItem
         // SIZING
         // ══════════════════════════════════════════════════════════════
 
-        private void RecalcSize()
+        private void RecalcWidth()
         {
             int iconW = _icon != IconChar.None ? IconSz + 5 : 0;
             int textW = string.IsNullOrEmpty(_text) ? 0
                 : TextRenderer.MeasureText(_text, SystemFonts.DefaultFont).Width;
-            int contentW = Math.Max(iconW + textW, 8);
-            int arrowW = _isSplit ? ArrowW + 1 : 0;
-            Width = PadH + contentW + PadH + arrowW;
+            int label = PadL + iconW + textW + PadR;
+            Width = _isSplit ? label + ArrowW : Math.Max(label, 28);
             Height = FixedH;
         }
 
-        protected override void SetBoundsCore(
-            int x, int y, int width, int height, BoundsSpecified specified)
+        protected override void SetBoundsCore(int x, int y, int w, int h, BoundsSpecified s)
+            => base.SetBoundsCore(x, y, w, FixedH, s);
+
+        // ══════════════════════════════════════════════════════════════
+        // PATHS REDONDEADOS PARCIALES
+        // ══════════════════════════════════════════════════════════════
+
+        // Esquinas redondeadas solo en el lado izquierdo
+        private static GraphicsPath LeftRounded(Rectangle r, int rad)
         {
-            // Altura fija; ancho calculado automáticamente
-            base.SetBoundsCore(x, y, width, FixedH, specified);
+            int d = rad * 2;
+            var p = new GraphicsPath();
+            p.AddArc(r.X, r.Y, d, d, 180, 90);                  // sup-izq
+            p.AddLine(r.X + rad, r.Y, r.Right, r.Y);             // borde superior
+            p.AddLine(r.Right, r.Y, r.Right, r.Bottom);          // borde derecho (recto)
+            p.AddLine(r.Right, r.Bottom, r.X + rad, r.Bottom);   // borde inferior
+            p.AddArc(r.X, r.Bottom - d, d, d, 90, 90);           // inf-izq
+            p.CloseFigure();
+            return p;
         }
 
-        // ── Helper: esquinas redondeadas solo en el lado derecho ──────
-
-        private static GraphicsPath BuildRightRoundedPath(Rectangle rect, int r)
+        // Esquinas redondeadas solo en el lado derecho
+        private static GraphicsPath RightRounded(Rectangle r, int rad)
         {
-            int d = r * 2;
-            var path = new GraphicsPath();
-            path.AddLine(rect.X, rect.Y, rect.Right - r, rect.Y);
-            path.AddArc(rect.Right - d, rect.Y, d, d, 270, 90);
-            path.AddArc(rect.Right - d, rect.Bottom - d, d, d, 0, 90);
-            path.AddLine(rect.Right - r, rect.Bottom, rect.X, rect.Bottom);
-            path.CloseFigure();
-            return path;
+            int d = rad * 2;
+            var p = new GraphicsPath();
+            p.AddLine(r.X, r.Y, r.Right - rad, r.Y);             // borde superior
+            p.AddArc(r.Right - d, r.Y, d, d, 270, 90);           // sup-der
+            p.AddArc(r.Right - d, r.Bottom - d, d, d, 0, 90);    // inf-der
+            p.AddLine(r.Right - rad, r.Bottom, r.X, r.Bottom);   // borde inferior
+            p.CloseFigure();
+            return p;
         }
 
         // ══════════════════════════════════════════════════════════════
